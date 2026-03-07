@@ -1,6 +1,13 @@
 import re
+import json
+import logging
+import urllib.request
+import urllib.error
 from typing import Any, Dict, List, Optional, Set
+
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 from guard.logic.models.policy_schema import (
     StructuredPolicy, 
     LogicalCondition, 
@@ -149,3 +156,64 @@ class PolicyEnforcer:
             if str(v).lower() in cond: # Dangerous but simple for demo
                 return True
         return False
+
+
+class OpaClient:
+    """
+    Client to query the local Open Policy Agent (OPA) server for policy enforcement.
+    Fails closed (DENY) on any errors or timeouts to maintain a Failsafe posture.
+    """
+    
+    def __init__(self, endpoint_url: str = "http://localhost:8181/v1/data/system/rules/allow", timeout_seconds: float = 2.0):
+        self.endpoint_url = endpoint_url
+        self.timeout = timeout_seconds
+
+    def query_policy(self, agent_id: str, action_type: str, payload: Dict[str, Any]) -> bool:
+        """
+        Queries OPA to evaluate whether the requested action is permitted.
+        Returns True if allowed, False otherwise (Failsafe).
+        """
+        input_payload = {
+            "agent_id": agent_id,
+            "action_type": action_type,
+            "payload": payload
+        }
+        
+        # Merge payload properties into the top level for rules expecting e.g. input.agent_level
+        if isinstance(payload, dict):
+            for k, v in payload.items():
+                if k not in ("agent_id", "action_type", "payload"):
+                    input_payload[k] = v
+                    
+        input_data = {
+            "input": input_payload
+        }
+        
+        try:
+            req = urllib.request.Request(
+                self.endpoint_url,
+                data=json.dumps(input_data, default=str).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                if response.status != 200:
+                    logger.warning(f"OPA server returned status {response.status}. Defaulting to DENY.")
+                    return False
+                
+                response_body = response.read().decode("utf-8")
+                result_data = json.loads(response_body)
+                
+                # OPA typically wraps responses in a 'result' field
+                result = result_data.get("result", False)
+                
+                if isinstance(result, bool):
+                    return result
+                if isinstance(result, dict) and "allow" in result:
+                    return bool(result.get("allow", False))
+                
+                return bool(result)
+                
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, Exception) as e:
+            logger.error(f"Error communicating with OPA server: %s. Defaulting to DENY.", e)
+            return False

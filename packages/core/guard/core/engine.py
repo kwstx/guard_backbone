@@ -4,10 +4,6 @@ Orchestrates the various subsystems using their defined interfaces.
 """
 
 from .logger import get_logger
-from .exceptions import (
-    AutonomyException, IdentityError, EnforcementError,
-    BudgetViolationError, GovernanceRejectionError, SimulationFailure
-)
 from typing import Optional, TYPE_CHECKING
 from .interfaces import (
     IdentityProvider, EnforcementEngine, EconomicPolicyEngine,
@@ -15,8 +11,7 @@ from .interfaces import (
 )
 from .schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest, ActionAuthorizationResponse,
-    GovernanceProposalRequest, BudgetEvaluationRequest, SimulationRequest,
-    GovernanceRecord
+    GovernanceProposalRequest, BudgetEvaluationRequest, SimulationRequest
 )
 
 if TYPE_CHECKING:
@@ -49,55 +44,52 @@ class AutonomyCore:
 
     async def authorize_action(self, request: ActionAuthorizationRequest) -> ActionAuthorizationResponse:
         """
-        Orchestrates multiple components to determine if an action should proceed.
+        Executes a sequential Sovereign Safety Check to determine if an action should proceed.
         """
-        agent_id = request.agent_id
-        action_id = getattr(request, 'action_id', 'unknown')
-        self.logger.info(
-            f"Authorizing action {request.action_type} for agent {agent_id}",
-            extra={"agent_id": agent_id, "action_id": action_id}
-        )
-
         try:
-            # 1. Identity Check
+            agent_id = request.agent_id
+
+            # 1. Identity Verification
             id_res = await self.identity.verify(agent_id)
             if not id_res.is_valid:
-                raise IdentityError(f"Identity verification failed for {agent_id}.")
+                return ActionAuthorizationResponse(is_authorized=False, reason='Identity Violation')
 
-            # 2. Guardrails / Enforcement Check
+            # 2. Logic & Policy Check
             enf_res = await self.enforcement.validate(request)
             if not enf_res.is_authorized:
-                raise EnforcementError(f"Action validation failed for {agent_id}.")
+                return ActionAuthorizationResponse(is_authorized=False, reason='Policy Violation: ' + (enf_res.reason or "Unknown"))
 
-            # 3. Economic capability
+            # 3. Economic Pre-Check
             budget_req = BudgetEvaluationRequest(agent_id=agent_id, action_type=request.action_type, payload=request.payload)
             eco_res = await self.economic.has_funds(budget_req)
             if not eco_res.has_funds:
-                raise BudgetViolationError(f"Insufficient funds for agent {agent_id} to perform action.")
+                return ActionAuthorizationResponse(is_authorized=False, reason='Budget Depleted')
 
-            # 4. Simulation / Impact
+            # 4. Simulation & Impact
             sim_req = SimulationRequest(agent_id=agent_id, action_type=request.action_type, payload=request.payload)
             sim_res = await self.simulation.predict_impact(sim_req)
+            impact_score = sim_res.impact_score
 
-            # 5. Global Action Scoring
-            score_res = await self.scoring.calculate_score(request, sim_res.impact_score)
+            # 5. Unified Risk Scoring
+            score_res = await self.scoring.calculate_score(request, impact_score)
+
+            # 6. The Decision Gate
             if not score_res.threshold_met:
-                raise GovernanceRejectionError(f"Action scoring below threshold for {agent_id}.")
-            # 6. Governance / Logging / Self-Improvement
-            await self.governance.record_action(GovernanceRecord(agent_id=agent_id, action=request, action_score=score_res.action_score))
-            self.logger.info(
-                f"Action successfully authorized for agent {agent_id}.",
-                extra={"agent_id": agent_id, "action_id": action_id, "decision_outcome": "approved", "risk_score": score_res.action_score}
-            )
-            return ActionAuthorizationResponse(is_authorized=True, reason="Success")
+                return ActionAuthorizationResponse(
+                    is_authorized=False, 
+                    reason='Risk Score ( ' + str(score_res.action_score) + ' ) exceeds safety threshold', 
+                    risk_score=score_res.action_score
+                )
 
-        except AutonomyException as e:
-            self.logger.error(
-                f"Authorization failed: {str(e)}",
-                extra={"agent_id": agent_id, "action_id": action_id, "decision_outcome": "rejected", "risk_score": None},
-                exc_info=True
+            # 7. Final Approval
+            return ActionAuthorizationResponse(
+                is_authorized=True, 
+                reason='Sovereign Check Pass', 
+                risk_score=score_res.action_score
             )
-            raise e
+
+        except Exception:
+            return ActionAuthorizationResponse(is_authorized=False, reason='System Failure: Default-Deny')
 
     async def register_agent(self, request: AgentRegistrationRequest) -> str:
         """

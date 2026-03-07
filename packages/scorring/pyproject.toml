@@ -1,0 +1,7 @@
+﻿[project]
+name = "scorring_module"
+version = "0.1.0"
+description = "scorring_module package"
+dependencies = [
+    "autonomy_core"
+]

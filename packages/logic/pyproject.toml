@@ -1,0 +1,12 @@
+[project]
+name = "actionable_logic"
+version = "0.1.0"
+description = "Actionable Logic Framework - Domain Logic"
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

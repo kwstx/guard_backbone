@@ -1,0 +1,12 @@
+[project]
+name = "gateway_service"
+version = "0.1.0"
+description = "Gateway service for external agent action orchestration"
+dependencies = [
+    "autonomy_core",
+    "identity_system",
+    "enforcement_layer",
+    "simulation_layer",
+    "fastapi",
+    "uvicorn",
+]

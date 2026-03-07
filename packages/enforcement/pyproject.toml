@@ -1,7 +1,7 @@
-﻿[project]
-name = "enforcement_layer"
+[project]
+name = "guard.enforcement"
 version = "0.1.0"
-description = "enforcement_layer package"
+description = "guard.enforcement package"
 dependencies = [
-    "autonomy_core"
+    "guard.core"
 ]

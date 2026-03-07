@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from actionable_logic.models.policy_schema import PolicyDomain, PolicyScope, StructuredPolicy
-from actionable_logic.translator.cross_domain_mapper import ComplianceAction, CrossDomainMapper, OperationalContext
+from guard.logic.models.policy_schema import PolicyDomain, PolicyScope, StructuredPolicy
+from guard.logic.translator.cross_domain_mapper import ComplianceAction, CrossDomainMapper, OperationalContext
 
 
 def _privacy_policy() -> StructuredPolicy:

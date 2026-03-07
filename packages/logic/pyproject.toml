@@ -1,5 +1,5 @@
 [project]
-name = "actionable_logic"
+name = "guard.logic"
 version = "0.1.0"
 description = "Actionable Logic Framework - Domain Logic"
 dependencies = [

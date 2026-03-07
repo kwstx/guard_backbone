@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from actionable_logic.enforcement.policy_conflict_detector import ConflictSeverity, ConflictType, PolicyConflictDetector
-from actionable_logic.enforcement.workflow import create_enforced_agent
-from actionable_logic.live_update.engine import LiveUpdateEngine
-from actionable_logic.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, PolicyScope, StructuredPolicy
-from actionable_logic.repository.policy_repository import PolicyRepository
+from guard.logic.enforcement.policy_conflict_detector import ConflictSeverity, ConflictType, PolicyConflictDetector
+from guard.logic.enforcement.workflow import create_enforced_agent
+from guard.logic.live_update.engine import LiveUpdateEngine
+from guard.logic.models.policy_schema import ConditionOperator, LogicalCondition, PolicyDomain, PolicyScope, StructuredPolicy
+from guard.logic.repository.policy_repository import PolicyRepository
 
 
 def _policy(

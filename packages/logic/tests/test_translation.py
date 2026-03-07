@@ -1,6 +1,6 @@
 import json
-from actionable_logic.translator.core import PolicySchemaTranslator
-from actionable_logic.models.policy_schema import PolicyDomain, PolicyScope
+from guard.logic.translator.core import PolicySchemaTranslator
+from guard.logic.models.policy_schema import PolicyDomain, PolicyScope
 
 def test_manual_translation_flow():
     """
@@ -21,7 +21,7 @@ def test_manual_translation_flow():
     print(f"Translating Policy: {nl_policy}\n")
     
     # Manually creating the object that an LLM would produce
-    from actionable_logic.models.policy_schema import StructuredPolicy, LogicalCondition, ConditionOperator, ActionTrigger, ExceptionHandler
+    from guard.logic.models.policy_schema import StructuredPolicy, LogicalCondition, ConditionOperator, ActionTrigger, ExceptionHandler
     from datetime import datetime
     
     structured_policy = StructuredPolicy(

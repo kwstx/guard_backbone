@@ -3,9 +3,9 @@ name = "gateway_service"
 version = "0.1.0"
 description = "Gateway service for external agent action orchestration"
 dependencies = [
-    "autonomy_core",
+    "guard.core",
     "identity_system",
-    "enforcement_layer",
+    "guard.enforcement",
     "simulation_layer",
     "fastapi",
     "uvicorn",

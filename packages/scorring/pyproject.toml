@@ -1,7 +1,7 @@
-﻿[project]
-name = "scorring_module"
+[project]
+name = "guard.scoring"
 version = "0.1.0"
-description = "scorring_module package"
+description = "guard.scoring package"
 dependencies = [
-    "autonomy_core"
+    "guard.core"
 ]

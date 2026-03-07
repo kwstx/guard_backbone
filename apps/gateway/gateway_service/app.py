@@ -7,8 +7,8 @@ from typing import Optional, List
 
 from fastapi import Depends, FastAPI, Header, Request
 
-from autonomy_core.schemas.models import ActionAuthorizationRequest, SimulationRequest
-from enforcement_layer import EnforcementLayer
+from guard.core.schemas.models import ActionAuthorizationRequest, SimulationRequest
+from guard.enforcement import EnforcementLayer
 from identity_system import IdentitySystem
 from simulation_layer import SimulationLayer
 from simulation_layer.simulation.entropy_stress_test import EntropyStressTest

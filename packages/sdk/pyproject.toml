@@ -1,7 +1,7 @@
 [project]
-name = "autonomy_sdk"
+name = "guard.sdk"
 version = "0.1.0"
 description = "Autonomy SDK"
 dependencies = [
-    "autonomy_core", "identity_system", "enforcement_layer", "economic_autonomy", "a2a_coordination", "scorring_module", "simulation_layer", "self_improvement_governance"
+    "guard.core", "identity_system", "guard.enforcement", "economic_autonomy", "a2a_coordination", "guard.scoring", "simulation_layer", "self_improvement_governance"
 ]

@@ -1,5 +1,5 @@
 [project]
-name = "autonomy_core"
+name = "guard.core"
 version = "0.1.0"
 description = "Autonomy Core Engine"
 dependencies = [

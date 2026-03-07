@@ -1,11 +1,11 @@
 import pytest
 from datetime import datetime
-from actionable_logic.models.policy_schema import (
+from guard.logic.models.policy_schema import (
     StructuredPolicy, PolicyDomain, PolicyScope, 
     LogicalCondition, ConditionOperator, ActionTrigger
 )
-from actionable_logic.enforcement.engine import PolicyEnforcer
-from actionable_logic.enforcement.workflow import create_enforced_agent
+from guard.logic.enforcement.engine import PolicyEnforcer
+from guard.logic.enforcement.workflow import create_enforced_agent
 
 def test_policy_enforcement_logic():
     # 1. Create a policy

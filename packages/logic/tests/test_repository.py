@@ -1,8 +1,8 @@
 import pytest
 import os
 from datetime import datetime
-from actionable_logic.repository.policy_repository import PolicyRepository
-from actionable_logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
+from guard.logic.repository.policy_repository import PolicyRepository
+from guard.logic.models.policy_schema import StructuredPolicy, PolicyDomain, PolicyScope, LogicalCondition, ConditionOperator
 
 @pytest.fixture
 def repo():

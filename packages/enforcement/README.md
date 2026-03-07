@@ -95,7 +95,7 @@ The `GuardrailOrchestrator` coordinates the full lifecycle:
 ## Project Structure
 
 ```
-enforcement_layers/
+guard.enforcements/
   src/
     index.ts                         # Public exports
     api/

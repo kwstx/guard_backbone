@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi.testclient import TestClient
 
-from autonomy_core.schemas.models import ActionAuthorizationResponse, SimulationResponse, VerificationResult
+from guard.core.schemas.models import ActionAuthorizationResponse, SimulationResponse, VerificationResult
 from gateway_service.app import app
 
 

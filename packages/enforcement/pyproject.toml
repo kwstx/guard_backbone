@@ -1,0 +1,7 @@
+﻿[project]
+name = "enforcement_layer"
+version = "0.1.0"
+description = "enforcement_layer package"
+dependencies = [
+    "autonomy_core"
+]

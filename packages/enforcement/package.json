@@ -1,0 +1,21 @@
+{
+  "name": "enforcement-layers",
+  "version": "1.0.0",
+  "description": "Pre-execution action firewall for agent systems - Domain Logic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "node --test",
+    "build": "tsc",
+    "start:subscriber": "tsx src/service.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "tsx": "^4.19.2"
+  },
+  "dependencies": {
+    "@agent-infra/event-bus": "file:../event-bus"
+  }
+}

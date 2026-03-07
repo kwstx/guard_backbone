@@ -1,0 +1,7 @@
+[project]
+name = "autonomy_core"
+version = "0.1.0"
+description = "Autonomy Core Engine"
+dependencies = [
+    "pydantic"
+]

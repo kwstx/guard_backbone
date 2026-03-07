@@ -4,7 +4,8 @@ from .exceptions import (
     AgentRegistrationError,
     ActionAuthorizationError,
     ClientConnectionError,
-    ProposalError
+    ProposalError,
+    SecurityViolation
 )
 from .middleware import circuit_breaker, CircuitBreakerException
 
@@ -15,6 +16,7 @@ __all__ = [
     "ActionAuthorizationError",
     "ClientConnectionError",
     "ProposalError",
+    "SecurityViolation",
     "circuit_breaker",
     "CircuitBreakerException"
 ]

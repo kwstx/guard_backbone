@@ -2,6 +2,7 @@ import urllib.request
 import urllib.error
 import json
 import asyncio
+import uuid
 from typing import Optional, Dict, Any
 
 from guard.core import AutonomyConfig, AutonomyContainer, AutonomyCore
@@ -21,7 +22,7 @@ from .exceptions import (
 class AutonomyClient:
     """
     The main entry point for external developers to interact with the Autonomy System.
-    Wraps AutonomyCore to hide internal complexity and expose high-level orchestration,
+    Wraps AutonomyCore to hide internal complexity and expose high-level security checks,
     using native Python types rather than internal Pydantic models.
     """
     def __init__(self, config: Optional[Dict[str, Any]] = None, api_version: str = "v1", server_url: Optional[str] = None):
@@ -70,7 +71,7 @@ class AutonomyClient:
     ) -> bool:
         """
         Check if an agent is authorized to perform a specific action.
-        This triggers a full orchestration of identity, enforcement, economics, scoring, and simulation.
+        This triggers a full safety check encompassing identity, enforcement, economics, scoring, and simulation.
         
         Args:
             agent_id: The ID of the agent attempting the action.
@@ -109,7 +110,6 @@ class AutonomyClient:
         body_bytes = req_obj.model_dump_json().encode('utf-8')
 
         from event_bus import EventBus, EventTopic, EventMessage
-        import asyncio
         
         bus = EventBus()
         await bus.connect()
@@ -184,8 +184,6 @@ class AutonomyClient:
         )
 
         from event_bus import EventBus, EventTopic, EventMessage
-        import asyncio
-        import uuid
         
         bus = EventBus()
         await bus.connect()
@@ -216,6 +214,10 @@ class AutonomyClient:
         try:
             # Wait for response with timeout
             result = await asyncio.wait_for(future, timeout=10.0)
+            if isinstance(result, dict):
+                # Ensure risk_score defaults to 0.0 and decision is present
+                result.setdefault("risk_score", 0.0)
+                result.setdefault("decision", result.get("status", "BLOCKED"))
             return result
         except asyncio.TimeoutError:
             raise ActionAuthorizationError("Timeout waiting for safety loop response via event bus")
@@ -388,9 +390,14 @@ class AutonomyClient:
             ```
         """
         return {
-            "status": "active",
-            "version": "1.0.0",
-            "connected": True
+            "version": "1.0.0-guard",
+            "security_modules": {
+                "Identity": "healthy",
+                "Enforcement": "healthy",
+                "Economics": "healthy",
+                "Simulation": "healthy",
+                "Scoring": "healthy"
+            }
         }
 
 

@@ -17,3 +17,7 @@ class ClientConnectionError(AutonomySDKError):
 class ProposalError(AutonomySDKError):
     """Raised when a governance proposal fails."""
     pass
+
+class SecurityViolation(AutonomySDKError):
+    """Raised when an action is blocked by the Guard due to a high risk score."""
+    pass

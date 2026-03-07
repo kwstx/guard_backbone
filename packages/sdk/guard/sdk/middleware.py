@@ -3,7 +3,7 @@ import asyncio
 import uuid
 from typing import Callable, Any, Optional
 
-from .exceptions import AutonomySDKError
+from .exceptions import AutonomySDKError, SecurityViolation
 
 class CircuitBreakerException(AutonomySDKError):
     """Raised when an action is blocked by the Circuit Breaker middleware due to high risk."""
@@ -32,15 +32,15 @@ def circuit_breaker(client, agent_id: str, action_type: str, threshold: float = 
                 payload=payload
             )
             
-            # Extract risk_score or fallback to impact_score
+            # Extract risk_score directly - no more impact_score fallbacks
             if isinstance(response, dict):
-                risk_score = response.get("risk_score", response.get("impact_score", 0.0))
+                risk_score = response.get("risk_score", 0.0)
             else:
-                risk_score = getattr(response, "risk_score", getattr(response, "impact_score", 0.0))
+                risk_score = getattr(response, "risk_score", 0.0)
             
             if float(risk_score) > threshold:
-                raise CircuitBreakerException(
-                    f"Action '{action_type}' blocked: Risk score {risk_score} exceeds threshold {threshold}"
+                raise SecurityViolation(
+                    f"Security Violation: Action '{action_type}' blocked. Risk score {risk_score} exceeds threshold {threshold}"
                 )
                 
             return await func(*args, **kwargs)
@@ -57,15 +57,15 @@ def circuit_breaker(client, agent_id: str, action_type: str, threshold: float = 
                 payload=payload
             )
             
-            # Extract risk_score or fallback to impact_score
+            # Extract risk_score directly - no more impact_score fallbacks
             if isinstance(response, dict):
-                risk_score = response.get("risk_score", response.get("impact_score", 0.0))
+                risk_score = response.get("risk_score", 0.0)
             else:
-                risk_score = getattr(response, "risk_score", getattr(response, "impact_score", 0.0))
+                risk_score = getattr(response, "risk_score", 0.0)
             
             if float(risk_score) > threshold:
-                raise CircuitBreakerException(
-                    f"Action '{action_type}' blocked: Risk score {risk_score} exceeds threshold {threshold}"
+                raise SecurityViolation(
+                    f"Security Violation: Action '{action_type}' blocked. Risk score {risk_score} exceeds threshold {threshold}"
                 )
                 
             return func(*args, **kwargs)

@@ -4,5 +4,6 @@ version = "0.1.0"
 description = "Autonomy Core Engine"
 dependencies = [
     "pydantic",
-    "python-terraform"
+    "python-terraform",
+    "stripe"
 ]

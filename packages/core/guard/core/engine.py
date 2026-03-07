@@ -11,9 +11,10 @@ from .interfaces import (
 )
 from .schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest, ActionAuthorizationResponse,
-    GovernanceProposalRequest, BudgetEvaluationRequest, SimulationRequest, SimulationResponse
+    GovernanceProposalRequest, BudgetEvaluationRequest, BudgetEvaluationResponse, SimulationRequest, SimulationResponse
 )
 import os
+import stripe
 from python_terraform import Terraform
 
 
@@ -201,4 +202,48 @@ class TerraformSimulator(SimulationEngine):
                 "plan_path": os.path.join(tf_dir, "plan.binary")
             }
         )
+
+
+class StripeEconomicPolicyEngine(EconomicPolicyEngine):
+    def __init__(self, api_key: str = None):
+        self.logger = get_logger(self.__class__.__name__)
+        # Use env var if not explicitly provided
+        key = api_key or os.environ.get("STRIPE_API_KEY")
+        if key:
+            stripe.api_key = key
+        else:
+            self.logger.warning("No STRIPE_API_KEY provided. Economic checks will likely fail.")
+
+    async def has_funds(self, request: BudgetEvaluationRequest) -> BudgetEvaluationResponse:
+        self.logger.info(f"Verifying funds for agent: {request.agent_id} via Stripe")
+        
+        try:
+            # Query the agent's Stripe customer record using agent_id in metadata
+            customers = stripe.Customer.search(
+                query=f"metadata['agent_id']:'{request.agent_id}'",
+                limit=1
+            )
+            
+            if not customers.data:
+                self.logger.warning(f"No Stripe customer found for agent: {request.agent_id}")
+                return BudgetEvaluationResponse(has_funds=False, balance=0.0)
+                
+            customer = customers.data[0]
+            
+            # Check customer balance. A negative balance implies credit.
+            # Real-world credit or pre-authorized funds check.
+            balance = customer.balance
+            
+            if balance is not None and balance < 0:
+                credit_amount = abs(balance) / 100.0
+                self.logger.info(f"Agent {request.agent_id} has {credit_amount} in balance/credit.")
+                return BudgetEvaluationResponse(has_funds=True, balance=credit_amount)
+            else:
+                self.logger.warning(f"Agent {request.agent_id} has insufficient credit.")
+                return BudgetEvaluationResponse(has_funds=False, balance=0.0)
+                
+        except Exception as e:
+            self.logger.error(f"Stripe API error for agent {request.agent_id}: {e}")
+            return BudgetEvaluationResponse(has_funds=False, balance=0.0)
+
 

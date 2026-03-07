@@ -67,7 +67,7 @@ class AutonomyContainer:
         factories: Dict[str, Dict[str, Factory]] = {
             "identity": {"default": _constructor_factory("identity_system", "IdentitySystem")},
             "enforcement": {"default": _constructor_factory("guard.enforcement", "EnforcementLayer")},
-            "economic": {"default": _constructor_factory("economic_autonomy", "EconomicAutonomy")},
+            "economic": {"default": _constructor_factory("guard.core.engine", "StripeEconomicPolicyEngine")},
             "scoring": {"default": _constructor_factory("guard.scoring", "ScoringModule")},
             "simulation": {"default": _constructor_factory("simulation_layer", "SimulationLayer")},
             "governance": {

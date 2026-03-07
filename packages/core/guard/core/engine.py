@@ -1,6 +1,6 @@
 """
 Autonomy Core Engine
-Orchestrates the various subsystems using their defined interfaces.
+Governs the various subsystems using their defined interfaces.
 """
 
 from .logger import get_logger

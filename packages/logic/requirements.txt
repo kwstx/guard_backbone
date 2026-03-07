@@ -4,3 +4,4 @@ sqlalchemy
 fastapi
 uvicorn
 httpx
+opa-python

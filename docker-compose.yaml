@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/workspace
+    environment:
+      - OPA_URL=http://opa:8181/v1/data/system_rules/allow
+    networks:
+      - sandbox_network
+    restart: unless-stopped
+
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: opa-server
+    ports:
+      - "8181:8181"
+    command:
+      - "run"
+      - "--server"
+      - "--addr"
+      - "0.0.0.0:8181"
+      - "/policies"
+    volumes:
+      - ./policies:/policies
+    networks:
+      - sandbox_network
+    restart: unless-stopped
+
+  envoy:
+    image: envoyproxy/envoy:v1.30-latest
+    container_name: envoy-proxy
+    ports:
+      - "8080:8080" # Intercepts all inbound and outbound traffic
+      - "9901:9901" # Envoy admin port
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - gateway-service
+    networks:
+      - sandbox_network
+    restart: unless-stopped
+
+networks:
+  sandbox_network:
+    driver: bridge

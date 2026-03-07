@@ -123,6 +123,8 @@ class TerraformSimulator(SimulationEngine):
         and executes terraform plan -out=plan.binary.
         This calculates real-world infrastructure changes instead of guessing impact.
         """
+        import json
+        
         self.logger.info(f"Simulating impact via Terraform for action: {request.action_type}")
         
         action_name = request.action_type
@@ -148,13 +150,53 @@ class TerraformSimulator(SimulationEngine):
                 details={"error": "Terraform plan failed", "stderr": stderr}
             )
             
-        self.logger.info(f"Calculated real-world infrastructure changes for {action_name}")
+        show_ret, show_out, show_err = tf.cmd('show', '-json', 'plan.binary')
         
-        # Here we pretend the impact score is calculated properly from the plan. 
-        # For simulation, we return a nominal valid impact score.
+        if show_ret != 0:
+            self.logger.error(f"Terraform show failed: {show_err}")
+            return SimulationResponse(
+                impact_score=100.0,
+                details={"error": "Terraform show failed", "stderr": show_err}
+            )
+            
+        try:
+            plan_data = json.loads(show_out)
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Failed to parse terraform json: {e}")
+            return SimulationResponse(
+                impact_score=100.0,
+                details={"error": "JSON parse error", "stderr": str(e)}
+            )
+            
+        deletions = 0
+        creations = 0
+        changes = 0
+        
+        for resource in plan_data.get("resource_changes", []):
+            actions = resource.get("change", {}).get("actions", [])
+            if "delete" in actions:
+                deletions += 1
+            if "create" in actions:
+                creations += 1
+            if "update" in actions:
+                changes += 1
+                
+        # Map these numbers to a deterministic impact_score
+        # representing the 'Physical Blast Radius' of the proposed action.
+        impact_score = float((deletions * 100) + (changes * 50) + (creations * 10))
+            
+        self.logger.info(
+            f"Calculated Physical Blast Radius for {action_name}: "
+            f"{deletions} deleted, {changes} changed, {creations} created. "
+            f"Impact Score: {impact_score}"
+        )
+        
         return SimulationResponse(
-            impact_score=10.0,
+            impact_score=impact_score,
             details={
+                "deleted": deletions,
+                "changed": changes,
+                "created": creations,
                 "stdout": stdout,
                 "plan_path": os.path.join(tf_dir, "plan.binary")
             }

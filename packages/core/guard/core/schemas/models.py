@@ -56,15 +56,6 @@ class ScoringResult(BaseModel):
     action_score: float
     threshold_met: bool
 
-class CoordinationMessage(BaseModel):
-    sender_id: str
-    action: ActionAuthorizationRequest
-    recipients: Optional[List[str]] = None
-
-class CoordinationResult(BaseModel):
-    success: bool
-    nodes_notified: int
-
 class GovernanceRecord(BaseModel):
     agent_id: str
     action: ActionAuthorizationRequest
@@ -74,12 +65,3 @@ class GovernanceRecord(BaseModel):
 class GovernanceResult(BaseModel):
     recorded: bool
     record_id: Optional[str] = None
-
-class TaskProposal(BaseModel):
-    task_id: str
-    description: str
-    required_capabilities: List[str] = Field(default_factory=list)
-
-class TaskFormationResult(BaseModel):
-    formed: bool
-    assigned_agents: List[str] = Field(default_factory=list)

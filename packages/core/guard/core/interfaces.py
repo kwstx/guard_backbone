@@ -5,8 +5,7 @@ from guard.core.schemas.models import (
     GovernanceProposalRequest, GovernanceProposalResponse,
     BudgetEvaluationRequest, BudgetEvaluationResponse,
     SimulationRequest, SimulationResponse,
-    ScoringResult, CoordinationMessage, CoordinationResult,
-    GovernanceRecord, GovernanceResult, TaskProposal, TaskFormationResult
+    ScoringResult, GovernanceRecord, GovernanceResult
 )
 
 # ====== Interfaces ====== #
@@ -45,12 +44,6 @@ class ScoringEngine(ABC):
         pass
 
 
-class CoordinationEngine(ABC):
-    @abstractmethod
-    async def notify_peers(self, message: CoordinationMessage) -> CoordinationResult:
-        pass
-
-
 class GovernanceEngine(ABC):
     @abstractmethod
     async def record_action(self, record: GovernanceRecord) -> GovernanceResult:
@@ -58,10 +51,4 @@ class GovernanceEngine(ABC):
 
     @abstractmethod
     async def submit_proposal(self, request: GovernanceProposalRequest) -> GovernanceProposalResponse:
-        pass
-
-
-class TaskFormationEngine(ABC):
-    @abstractmethod
-    async def form_task(self, proposal: TaskProposal) -> TaskFormationResult:
         pass

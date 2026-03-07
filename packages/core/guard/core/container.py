@@ -30,11 +30,9 @@ class AutonomyContainer:
             identity=self.resolve("identity"),
             enforcement=self.resolve("enforcement"),
             economic=self.resolve("economic"),
-            coordination=self.resolve("coordination"),
             scoring=self.resolve("scoring"),
             simulation=self.resolve("simulation"),
-            governance=self.resolve("governance"),
-            task_formation=self.resolve_optional("task_formation"),
+            governance=self.resolve("governance")
         )
 
     def register_factory(self, dependency: str, implementation: str, factory: Factory) -> None:
@@ -59,10 +57,6 @@ class AutonomyContainer:
         self._instances[dependency] = instance
         return instance
 
-    def resolve_optional(self, dependency: str) -> Any:
-        if dependency == "task_formation" and not self.config.is_enabled("task_formation"):
-            return None
-        return self.resolve(dependency)
 
     def state_backend(self) -> StateStore:
         return self.resolve("state_backend")
@@ -74,13 +68,11 @@ class AutonomyContainer:
             "identity": {"default": _constructor_factory("identity_system", "IdentitySystem")},
             "enforcement": {"default": _constructor_factory("guard.enforcement", "EnforcementLayer")},
             "economic": {"default": _constructor_factory("economic_autonomy", "EconomicAutonomy")},
-            "coordination": {"default": _constructor_factory("a2a_coordination", "A2ACoordination")},
             "scoring": {"default": _constructor_factory("guard.scoring", "ScoringModule")},
             "simulation": {"default": _constructor_factory("simulation_layer", "SimulationLayer")},
             "governance": {
                 "default": _constructor_factory("self_improvement_governance", "GovernanceModule")
             },
-            "task_formation": {"default": _constructor_factory("task_formation", "TaskFormation")},
             "state_backend": {
                 "memory": lambda _cfg, _container: InMemoryStateStore(),
                 "file": lambda _cfg, _container: FileStateStore(base_path=_cfg.options_for("state_backend").get("path", "./state_data")),

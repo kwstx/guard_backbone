@@ -11,13 +11,12 @@ from .exceptions import (
 from typing import Optional, TYPE_CHECKING
 from .interfaces import (
     IdentityProvider, EnforcementEngine, EconomicPolicyEngine,
-    CoordinationEngine, ScoringEngine, SimulationEngine, GovernanceEngine,
-    TaskFormationEngine
+    ScoringEngine, SimulationEngine, GovernanceEngine
 )
 from .schemas.models import (
     AgentRegistrationRequest, ActionAuthorizationRequest, ActionAuthorizationResponse,
     GovernanceProposalRequest, BudgetEvaluationRequest, SimulationRequest,
-    CoordinationMessage, GovernanceRecord
+    GovernanceRecord
 )
 
 if TYPE_CHECKING:
@@ -29,11 +28,9 @@ class AutonomyCore:
                  identity: IdentityProvider,
                  enforcement: EnforcementEngine,
                  economic: EconomicPolicyEngine,
-                 coordination: CoordinationEngine,
                  scoring: ScoringEngine,
                  simulation: SimulationEngine,
-                 governance: GovernanceEngine,
-                 task_formation: Optional[TaskFormationEngine] = None):
+                 governance: GovernanceEngine):
         """
         Initializes the core with interface implementations.
         """
@@ -42,11 +39,9 @@ class AutonomyCore:
         self.identity = identity
         self.enforcement = enforcement
         self.economic = economic
-        self.coordination = coordination
         self.scoring = scoring
         self.simulation = simulation
         self.governance = governance
-        self.task_formation = task_formation
 
     @classmethod
     def from_container(cls, container: "AutonomyContainer") -> "AutonomyCore":
@@ -88,13 +83,8 @@ class AutonomyCore:
             score_res = await self.scoring.calculate_score(request, sim_res.impact_score)
             if not score_res.threshold_met:
                 raise GovernanceRejectionError(f"Action scoring below threshold for {agent_id}.")
-
-            # 6. Coordination (inform other agents or update shared state)
-            await self.coordination.notify_peers(CoordinationMessage(sender_id=agent_id, action=request))
-
-            # 7. Governance / Logging / Self-Improvement
+            # 6. Governance / Logging / Self-Improvement
             await self.governance.record_action(GovernanceRecord(agent_id=agent_id, action=request, action_score=score_res.action_score))
-
             self.logger.info(
                 f"Action successfully authorized for agent {agent_id}.",
                 extra={"agent_id": agent_id, "action_id": action_id, "decision_outcome": "approved", "risk_score": score_res.action_score}

@@ -8,11 +8,9 @@ ModuleName = Literal[
     "identity",
     "enforcement",
     "economic",
-    "coordination",
     "scoring",
     "simulation",
     "governance",
-    "task_formation",
 ]
 
 StateBackendName = Literal["memory", "file", "sqlite", "redis"]
@@ -45,11 +43,9 @@ class AutonomyConfig:
             "identity": True,
             "enforcement": True,
             "economic": True,
-            "coordination": True,
             "scoring": True,
             "simulation": True,
             "governance": True,
-            "task_formation": True,
         }
     )
     state_backend: StateBackendName = "memory"
@@ -58,11 +54,9 @@ class AutonomyConfig:
             "identity": "default",
             "enforcement": "default",
             "economic": "default",
-            "coordination": "default",
             "scoring": "default",
             "simulation": "default",
             "governance": "default",
-            "task_formation": "default",
         }
     )
     module_options: Dict[str, Dict[str, Any]] = field(default_factory=dict)

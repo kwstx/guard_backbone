@@ -65,7 +65,7 @@ class AutonomyContainer:
         self, overrides: Mapping[str, Mapping[str, Factory]]
     ) -> Dict[str, Dict[str, Factory]]:
         factories: Dict[str, Dict[str, Factory]] = {
-            "identity": {"default": _constructor_factory("identity_system", "IdentitySystem")},
+            "identity": {"default": _constructor_factory("guard.core.engine", "SpiffeIdentityProvider")},
             "enforcement": {"default": _constructor_factory("guard.enforcement", "EnforcementLayer")},
             "economic": {"default": _constructor_factory("guard.core.engine", "StripeEconomicPolicyEngine")},
             "scoring": {"default": _constructor_factory("guard.scoring", "ScoringModule")},

@@ -3,5 +3,5 @@ name = "guard.sdk"
 version = "0.1.0"
 description = "Autonomy SDK"
 dependencies = [
-    "guard.core", "identity_system", "guard.enforcement", "economic_autonomy", "guard.scoring", "simulation_layer", "self_improvement_governance"
+    "guard.core", "guard.enforcement", "economic_autonomy", "guard.scoring", "simulation_layer", "self_improvement_governance"
 ]

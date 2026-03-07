@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Gateway service for external agent action orchestration"
 dependencies = [
     "guard.core",
-    "identity_system",
     "guard.enforcement",
     "simulation_layer",
     "fastapi",

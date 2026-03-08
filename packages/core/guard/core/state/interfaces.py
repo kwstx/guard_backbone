@@ -14,6 +14,10 @@ class StateStore(ABC):
         pass
 
     @abstractmethod
+    async def get_all_agents(self) -> List[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
     async def save_proposal(self, proposal_id: str, proposal_data: Dict[str, Any]) -> None:
         pass
 

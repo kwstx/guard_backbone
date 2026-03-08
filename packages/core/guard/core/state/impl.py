@@ -18,6 +18,9 @@ class InMemoryStateStore(StateStore):
     async def get_agent(self, agent_id: str) -> Optional[Dict[str, Any]]:
         return self.agents.get(agent_id)
 
+    async def get_all_agents(self) -> List[Dict[str, Any]]:
+        return list(self.agents.values())
+
     async def save_proposal(self, proposal_id: str, proposal_data: Dict[str, Any]) -> None:
         self.proposals[proposal_id] = proposal_data
 
@@ -73,6 +76,15 @@ class FileStateStore(StateStore):
 
     async def get_agent(self, agent_id: str) -> Optional[Dict[str, Any]]:
         return self._read_json(self._get_path("agents", agent_id))
+
+    async def get_all_agents(self) -> List[Dict[str, Any]]:
+        agents = []
+        agents_dir = self.base_path / "agents"
+        for file_path in agents_dir.glob("*.json"):
+            data = self._read_json(file_path)
+            if data is not None:
+                agents.append(data)
+        return agents
 
     async def save_proposal(self, proposal_id: str, proposal_data: Dict[str, Any]) -> None:
         self._write_json(self._get_path("proposals", proposal_id), proposal_data)

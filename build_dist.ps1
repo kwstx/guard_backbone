@@ -1,18 +1,17 @@
-# Guard Backbone Desktop Build Script (Windows)
-# This script bundles the Python logic and the HTML dashboard into a single .exe
+# Guard Backbone Desktop Distribition Script (Windows)
+# This script prepares a portable folder for the GUI.
 
-Write-Host "Installing build dependencies..." -ForegroundColor Cyan
-pip install pywebview pyinstaller
+Write-Host "Preparing Guard Backbone distributable package..." -ForegroundColor Cyan
 
-Write-Host "Cleaning previous builds..." -ForegroundColor Yellow
-Remove-Item -Path "dist", "build" -Recurse -Force -ErrorAction SilentlyContinue
+$distFolder = "dist_portable"
+if (Test-Path $distFolder) { Remove-Item $distFolder -Recurse -Force }
+New-Item -ItemType Directory -Path $distFolder
 
-Write-Host "Bundling Guard Backbone into a standalone executable..." -ForegroundColor Green
-pyinstaller --noconfirm --onefile --windowed `
-    --add-data "dashboard.html;." `
-    --name "GuardBackbone" `
-    --icon "NONE" `
-    run_gui.py
+Write-Host "Copying assets..." -ForegroundColor Yellow
+Copy-Item "dashboard.html" $distFolder
+Copy-Item "launch_gui.ps1" $distFolder
+Copy-Item "Start_Dashboard.bat" $distFolder
 
-Write-Host "`nSuccessfully built Guard Backbone GUI!" -ForegroundColor Green
-Write-Host "The executable is located in: $(Get-Location)\dist\GuardBackbone.exe" -ForegroundColor Cyan
+Write-Host "`nSuccessfully created distributable package!" -ForegroundColor Green
+Write-Host "The package is located in: $(Join-Path (Get-Location) $distFolder)" -ForegroundColor Cyan
+Write-Host "Simply ZIP this folder and send it to users. They just need to double-click 'Start_Dashboard.bat'." -ForegroundColor White

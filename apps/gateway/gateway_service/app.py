@@ -8,18 +8,108 @@ import os
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set
+from urllib import request as urllib_request
+from urllib import error as urllib_error
 
 from guard.core import AutonomyCore, AutonomyContainer
 from guard.core.schemas.models import (
     AgentRegistrationRequest, 
     ActionAuthorizationRequest, 
     GovernanceProposalRequest,
-    ActionAuthorizationResponse
+    ActionAuthorizationResponse,
+    BudgetEvaluationRequest,
+    SimulationRequest,
 )
 
 # Resolve the policies directory relative to the project root
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]  # apps/gateway/gateway_service -> project root
 POLICIES_DIR = _PROJECT_ROOT / "policies"
+SIMULATION_SANDBOX_DIR = _PROJECT_ROOT / "infra_sandbox"
+OPA_BASE_URL = os.environ.get("OPA_BASE_URL", "http://localhost:8181").rstrip("/")
+DEFAULT_DASHBOARD_AGENT = os.environ.get("DASHBOARD_AGENT_ID", "sre-bot-alpha")
+CATALOG_DEFINITIONS: List[Dict[str, Any]] = [
+    {
+        "id": "standard-vm",
+        "name": "Standard VM Provisioning",
+        "description": "Provision a baseline compute node for staging workloads.",
+        "action_type": "vm_provision_standard",
+        "billing_unit": "hour",
+        "unit_price_usd": 0.015,
+        "risk_band": "low",
+    },
+    {
+        "id": "db-remediation",
+        "name": "Database Remediation",
+        "description": "Run controlled remediation workflow against managed databases.",
+        "action_type": "database_remediation",
+        "billing_unit": "operation",
+        "unit_price_usd": 5.0,
+        "risk_band": "medium",
+    },
+    {
+        "id": "network-isolation",
+        "name": "Network Isolation",
+        "description": "Apply emergency network segmentation and egress controls.",
+        "action_type": "network_isolation",
+        "billing_unit": "operation",
+        "unit_price_usd": 12.5,
+        "risk_band": "high",
+    },
+]
+
+
+def _extract_budget_ceiling() -> Optional[float]:
+    budget_ceiling = None
+    rules_path = POLICIES_DIR / "system_rules.rego"
+    if not rules_path.exists():
+        return budget_ceiling
+    try:
+        content = rules_path.read_text(encoding="utf-8")
+        for line in content.splitlines():
+            if "max_allowed" in line and ":=" in line:
+                val = line.split(":=")[1].strip()
+                budget_ceiling = float(val)
+                break
+    except Exception:
+        return None
+    return budget_ceiling
+
+
+def _extract_package_name_from_rego(raw: str) -> Optional[str]:
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("package "):
+            return stripped.split("package ", 1)[1].strip()
+    return None
+
+
+def _fetch_policies_from_policy_agent() -> Optional[List[Dict[str, Any]]]:
+    """Fetch active policies from OPA (policy agent). Returns None on failure."""
+    try:
+        with urllib_request.urlopen(f"{OPA_BASE_URL}/v1/policies", timeout=3) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        results = payload.get("result", [])
+    except (urllib_error.URLError, urllib_error.HTTPError, TimeoutError, json.JSONDecodeError):
+        return None
+    except Exception:
+        return None
+
+    policies: List[Dict[str, Any]] = []
+    for item in results:
+        policy_id = item.get("id", "unknown")
+        raw = item.get("raw", "") or ""
+        policies.append({
+            "id": f"pol_{policy_id.replace('/', '_')}",
+            "filename": policy_id,
+            "package": _extract_package_name_from_rego(raw),
+            "status": "active",
+            "enforcement_level": "hard-block",
+            "last_modified": datetime.now(timezone.utc).isoformat(),
+            "size_bytes": len(raw.encode("utf-8")),
+            "content": raw,
+            "source": "policy_agent",
+        })
+    return policies
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -200,40 +290,74 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/balances")
-    async def get_balances():
+    async def get_balances(agent_id: str = DEFAULT_DASHBOARD_AGENT):
         """Retrieve current economic balances for the budget layer.
 
-        Reads the max_allowed ceiling from system_rules.rego so the
-        dashboard always reflects the live policy configuration.
+        Queries the economic engine so the dashboard displays the live
+        remaining budget for the selected agent.
         """
-        budget_ceiling = None
-        rules_path = POLICIES_DIR / "system_rules.rego"
-        if rules_path.exists():
-            try:
-                content = rules_path.read_text(encoding="utf-8")
-                for line in content.splitlines():
-                    if "max_allowed" in line and ":=" in line:
-                        val = line.split(":=")[1].strip()
-                        budget_ceiling = float(val)
-            except Exception:
-                pass
+        budget_ceiling = _extract_budget_ceiling()
+        budget_request = BudgetEvaluationRequest(
+            agent_id=agent_id,
+            action_type="dashboard_balance_probe",
+            payload={"source": "dashboard"},
+        )
+        eco_response = await core.economic.has_funds(budget_request)
+        live_balance = float(eco_response.balance or 0.0)
 
         return {
             "status": "success",
             "balances": {
-                "available_budget": 14250.00,
+                "agent_id": agent_id,
+                "available_budget": live_balance,
                 "currency": "USD",
                 "budget_ceiling": budget_ceiling,
+                "has_funds": eco_response.has_funds,
+                "source": "economic_engine",
             }
+        }
+
+    @app.get("/economic/catalog")
+    async def get_product_catalog(agent_id: str = DEFAULT_DASHBOARD_AGENT):
+        """Economic catalog view with affordability from the live budget engine."""
+        balance_probe = await core.economic.has_funds(
+            BudgetEvaluationRequest(
+                agent_id=agent_id,
+                action_type="dashboard_catalog_probe",
+                payload={"source": "dashboard"},
+            )
+        )
+        available_budget = float(balance_probe.balance or 0.0)
+        products: List[Dict[str, Any]] = []
+        for item in CATALOG_DEFINITIONS:
+            unit_price = float(item["unit_price_usd"])
+            can_afford = balance_probe.has_funds and available_budget >= unit_price
+            products.append({
+                **item,
+                "currency": "USD",
+                "can_afford": can_afford,
+                "remaining_after_purchase": max(0.0, available_budget - unit_price),
+            })
+
+        return {
+            "status": "success",
+            "catalog": {
+                "agent_id": agent_id,
+                "available_budget": available_budget,
+                "currency": "USD",
+                "products": products,
+                "source": "economic_engine",
+            },
         }
 
     @app.get("/policies")
     async def get_policies():
-        """Retrieve active policy rules by scanning the policies/ directory for .rego files.
-
-        Each file is returned with its package name, raw content, and
-        file-system metadata so the dashboard can render a live policy list.
+        """Retrieve active policy rules from the Policy Agent (OPA), with file fallback.
         """
+        agent_policies = _fetch_policies_from_policy_agent()
+        if agent_policies is not None:
+            return {"status": "success", "source": "policy_agent", "policies": agent_policies}
+
         policies: List[Dict[str, Any]] = []
 
         if POLICIES_DIR.exists():
@@ -258,11 +382,54 @@ def create_app() -> FastAPI:
                         "last_modified": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
                         "size_bytes": stat.st_size,
                         "content": content,
+                        "source": "filesystem",
                     })
                 except Exception:
                     continue
 
-        return {"status": "success", "policies": policies}
+        return {"status": "success", "source": "filesystem", "policies": policies}
+
+    @app.get("/atlas")
+    async def get_atlas(agent_id: str = DEFAULT_DASHBOARD_AGENT):
+        """Simulation-backed infrastructure atlas from sandbox scenarios."""
+        scenarios: List[Dict[str, Any]] = []
+        if SIMULATION_SANDBOX_DIR.exists():
+            for scenario_dir in sorted(SIMULATION_SANDBOX_DIR.iterdir()):
+                if not scenario_dir.is_dir():
+                    continue
+                scenario_name = scenario_dir.name
+                try:
+                    sim_response = await core.simulation.predict_impact(
+                        SimulationRequest(
+                            agent_id=agent_id,
+                            action_type=scenario_name,
+                            payload={"source": "atlas"},
+                        )
+                    )
+                    scenarios.append({
+                        "scenario": scenario_name,
+                        "impact_score": sim_response.impact_score,
+                        "details": sim_response.details,
+                        "status": "simulated",
+                    })
+                except Exception as exc:
+                    scenarios.append({
+                        "scenario": scenario_name,
+                        "impact_score": None,
+                        "details": {"error": str(exc)},
+                        "status": "error",
+                    })
+
+        return {
+            "status": "success",
+            "atlas": {
+                "agent_id": agent_id,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "scenario_count": len(scenarios),
+                "scenarios": scenarios,
+                "source": "simulation_layer",
+            },
+        }
 
     @app.get("/analytics")
     async def get_analytics():

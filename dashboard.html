@@ -870,10 +870,9 @@
                     </div>
                 </div>
                 <div class="hero-card">
-                    <h2>System Status: Operational</h2>
-                    <p>Guard Backbone is currently processing traffic normally. The security ledger is actively
-                        recording agent autonomy decisions.</p>
-                    <button class="btn-primary" onclick="fetchAudit()">Refresh System State</button>
+                    <h2 id="home-system-title">System Status: Connecting...</h2>
+                    <p id="home-system-desc">Querying Guard Backbone for live system status...</p>
+                    <button class="btn-primary" onclick="refreshAllData()">Refresh System State</button>
                 </div>
             </div>
 
@@ -889,7 +888,8 @@
                         <div id="balances-available-budget"
                             style="font-size: 2.5rem; font-weight: 600; margin-top: 8px; font-family: 'JetBrains Mono', Consolas, monospace;">
                             Loading...</div>
-                        <p id="balances-meta" style="margin-top: 8px; color: var(--text-secondary);">Querying economic engine...</p>
+                        <p id="balances-meta" style="margin-top: 8px; color: var(--text-secondary);">Querying economic
+                            engine...</p>
                     </div>
                     <button id="btn-add-funds" class="btn-primary">Add Funds</button>
                 </div>
@@ -941,17 +941,18 @@
                         <thead>
                             <tr>
                                 <th>Agent Identity</th>
-                                <th>Last Ping</th>
-                                <th>Total Actions</th>
-                                <th>Risk Profile</th>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Registered</th>
+                                <th>Ledger Actions</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="agents-body">
                             <tr>
-                                <td colspan="5"
+                                <td colspan="6"
                                     style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading
-                                    agents from ledger...</td>
+                                    agents...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -973,7 +974,8 @@
                     <h1>Policy Overview</h1>
                     <button id="btn-edit-policies" class="btn-primary">Edit Policies (Rego)</button>
                 </div>
-                <div id="policy-source-meta" class="hero-card" style="margin-bottom: 1rem;">Loading policy agent rules...</div>
+                <div id="policy-source-meta" class="hero-card" style="margin-bottom: 1rem;">Loading policy agent
+                    rules...</div>
                 <div id="policy-overview-list"></div>
             </div>
 
@@ -1001,21 +1003,10 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="workflows-body">
                             <tr>
-                                <td>Automatic Incident Resolution</td>
-                                <td>Sentry Alert (500s)</td>
-                                <td><span class="status-pill status-approved">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td>Database Cleanup</td>
-                                <td>Nightly (CRON)</td>
-                                <td><span class="status-pill status-approved">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td>Financial Reconciliation</td>
-                                <td>End of Month</td>
-                                <td><span class="status-pill" style="background: #e3e8ee;">Paused</span></td>
+                                <td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">
+                                    Loading workflows...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1027,13 +1018,9 @@
                 <div class="page-header">
                     <h1>Payments</h1>
                 </div>
-                <div class="hero-card">
-                    <h2>Payment configuration</h2>
-                    <p>You can configure webhook endpoints for payment events and sync with external systems.</p>
-                    <div style="margin-top: 1rem; color: var(--text-secondary);">
-                        <strong>Default currency:</strong> USD <br>
-                        <strong>Payment processor:</strong> Stripe Connect
-                    </div>
+                <div id="payments-content" class="hero-card">
+                    <h2>Payment Configuration</h2>
+                    <p>Loading payment data from economic engine...</p>
                 </div>
             </div>
 
@@ -1042,14 +1029,10 @@
                 <div class="page-header">
                     <h1>Billing Details</h1>
                 </div>
-                <div class="info-card">
-                    <div style="display: flex; justify-content: space-between;">
-                        <h3>Current invoice (Mar 2026)</h3>
-                        <div style="font-weight: 600;">$0.00</div>
-                    </div>
-                    <p>No billing data generated yet for this period. Guard Backbone runs on a local sandbox in this
-                        instance.</p>
-                    <div class="btn-secondary" style="margin-top: 1rem; display: inline-block;">Manage Subscription
+                <div id="billing-content">
+                    <div class="info-card">
+                        <p style="color:var(--text-secondary);padding:1rem;text-align:center;">Loading billing
+                            details...</p>
                     </div>
                 </div>
             </div>
@@ -1065,88 +1048,52 @@
                     <div class="info-card">
                         <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Total
                             Actions Scanned</h3>
-                        <div style="font-size: 2rem; font-weight: 600; margin-top: 8px;">12,450</div>
+                        <div id="rpt-total-actions" style="font-size: 2rem; font-weight: 600; margin-top: 8px;">—</div>
                     </div>
                     <div class="info-card">
                         <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Blocked
                             Threats</h3>
-                        <div style="font-size: 2rem; font-weight: 600; margin-top: 8px; color: var(--danger-color);">342
+                        <div id="rpt-blocked"
+                            style="font-size: 2rem; font-weight: 600; margin-top: 8px; color: var(--danger-color);">—
                         </div>
                     </div>
                     <div class="info-card">
-                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Avg.
-                            Risk Score</h3>
-                        <div style="font-size: 2rem; font-weight: 600; margin-top: 8px;">1.45</div>
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Active
+                            Agents</h3>
+                        <div id="rpt-active-agents" style="font-size: 2rem; font-weight: 600; margin-top: 8px;">—</div>
                     </div>
                 </div>
 
                 <div class="hero-card">
-                    <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Action Throughput (Last 7 Days)</h2>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Overview of agent
-                        executions and system autonomy across all configured environments.</p>
-
-                    <div
+                    <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Event Type Breakdown</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Distribution of
+                        events by type across all audit records.</p>
+                    <div id="rpt-chart-bars"
                         style="display: flex; align-items: flex-end; gap: 1rem; height: 180px; border-bottom: 1px solid var(--border-color); padding-bottom: 0;">
-                        <div style="flex: 1; height: 30%; background: var(--primary-purple); opacity: 0.4; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'"></div>
-                        <div style="flex: 1; height: 50%; background: var(--primary-purple); opacity: 0.5; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'"></div>
-                        <div style="flex: 1; height: 40%; background: var(--primary-purple); opacity: 0.45; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'"></div>
-                        <div style="flex: 1; height: 80%; background: var(--primary-purple); opacity: 0.8; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></div>
-                        <div style="flex: 1; height: 60%; background: var(--primary-purple); opacity: 0.6; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"></div>
-                        <div style="flex: 1; height: 90%; background: var(--primary-purple); opacity: 0.9; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'"></div>
-                        <div style="flex: 1; height: 100%; background: var(--primary-purple); opacity: 1; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
-                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></div>
+                        <div
+                            style="flex:1;height:10%;background:var(--primary-purple);opacity:0.3;border-radius:4px 4px 0 0;">
+                        </div>
                     </div>
-                    <div
+                    <div id="rpt-chart-labels"
                         style="display: flex; justify-content: space-between; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.75rem; font-weight: 500;">
-                        <span style="flex: 1; text-align: center;">Mon</span>
-                        <span style="flex: 1; text-align: center;">Tue</span>
-                        <span style="flex: 1; text-align: center;">Wed</span>
-                        <span style="flex: 1; text-align: center;">Thu</span>
-                        <span style="flex: 1; text-align: center;">Fri</span>
-                        <span style="flex: 1; text-align: center;">Sat</span>
-                        <span style="flex: 1; text-align: center;">Sun</span>
+                        <span style="flex:1;text-align:center;">Loading...</span>
                     </div>
                 </div>
 
-                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Generated Reports</h3>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Event Type Details</h3>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Report Name</th>
-                                <th>Date Range</th>
-                                <th>Generated</th>
-                                <th>Status</th>
-                                <th>Action</th>
+                                <th>Event Type</th>
+                                <th>Count</th>
+                                <th>Proportion</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="rpt-breakdown-body">
                             <tr>
-                                <td style="font-weight: 500;">Weekly Executive Summary</td>
-                                <td>Feb 23 - Mar 01, 2026</td>
-                                <td>Mar 02, 2026</td>
-                                <td><span class="status-pill status-approved">Ready</span></td>
-                                <td><a href="#" class="link-text">Download</a></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 500;">Monthly Risk Assessment</td>
-                                <td>February 2026</td>
-                                <td>Mar 01, 2026</td>
-                                <td><span class="status-pill status-approved">Ready</span></td>
-                                <td><a href="#" class="link-text">Download</a></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 500;">Q1 Infrastructure Impact</td>
-                                <td>Jan 01 - Mar 31, 2026</td>
-                                <td>-</td>
-                                <td><span class="status-pill" style="background: #e3e8ee;">Draft</span></td>
-                                <td><a href="#" class="link-text">View Progress</a></td>
+                                <td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">
+                                    Loading analytics...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1361,11 +1308,7 @@
             closeSettings();
             // Reconnect SSE with new URL
             connectSSE();
-            fetchAudit();
-            fetchBalancesPage();
-            fetchProductCatalogPage();
-            fetchPolicyOverviewPage();
-            fetchAtlasPage();
+            refreshAllData();
         }
 
         // Notification permission
@@ -1457,6 +1400,13 @@
                     showToast(`🛑 Denied: ${evt.agent_id} → ${evt.action_type || 'unknown'}`);
                 } else if (evt.type === 'final_decision') {
                     showToast(`✅ Approved: ${evt.agent_id} → ${evt.action_type || 'unknown'}`);
+                } else if (evt.type === 'agent_registration') {
+                    showToast(`👤 New Agent: ${evt.agent_id}`);
+                    fetchAgentsPage();
+                    fetchSystemStatus();
+                } else if (evt.type === 'governance_proposal') {
+                    showToast(`📜 New Workflow Proposal`);
+                    renderWorkflowsPage();
                 }
 
                 updateDashboard(auditLogs);
@@ -1491,6 +1441,10 @@
             const uniqueAgents = new Set(logs.map(l => l.agent_id).filter(id => id));
             document.getElementById('home-active-agents').innerText = uniqueAgents.size;
 
+            // Update derived components
+            renderWorkflowsPage();
+            fetchReportingPage();
+
             // Transactions
             const tBody = document.getElementById('transactions-body');
             if (decisionLogs.length === 0) {
@@ -1511,27 +1465,8 @@
                 tBody.innerHTML = tHtml;
             }
 
-            // Agents
-            const aBody = document.getElementById('agents-body');
-            if (uniqueAgents.size === 0) {
-                aBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No agents found on ledger.</td></tr>`;
-            } else {
-                let aHtml = '';
-                uniqueAgents.forEach(agentId => {
-                    const agentLogs = decisionLogs.filter(l => l.agent_id === agentId);
-                    const lastPing = agentLogs.length > 0 ? new Date(agentLogs[0].timestamp).toLocaleString() : 'N/A';
-                    const totalActions = agentLogs.length;
-                    const avgRisk = agentLogs.length > 0 ? (agentLogs.reduce((acc, l) => acc + (l.risk_score || 0), 0) / agentLogs.length).toFixed(2) : 0.00;
-                    aHtml += `<tr>
-                        <td><span class="agent-id">${agentId}</span></td>
-                        <td class="mono" style="opacity: 0.7;">${lastPing}</td>
-                        <td>${totalActions}</td>
-                        <td>Score: ${avgRisk}</td>
-                        <td><span class="status-pill status-approved">Active</span></td>
-                    </tr>`;
-                });
-                aBody.innerHTML = aHtml;
-            }
+            // Agents — rendered separately via fetchAgentsPage()
+            // (no-op here, agents table populated from /agents endpoint)
 
             // Security Ledger
             const auditBody = document.getElementById('audit-body');
@@ -1689,11 +1624,259 @@
             }
         }
 
+        // ───────────────────────────────────────────────────────────────
+        // Agents Page — fetches from /agents endpoint
+        // ───────────────────────────────────────────────────────────────
+        async function fetchAgentsPage() {
+            const aBody = document.getElementById('agents-body');
+            if (!aBody) return;
+            try {
+                const res = await fetch(`${API_URL}/agents`);
+                const data = await res.json();
+                if (data.status !== 'success' || !Array.isArray(data.agents) || data.agents.length === 0) {
+                    // Fallback: derive agents from audit logs
+                    const uniqueAgents = new Set(auditLogs.map(l => l.agent_id).filter(id => id));
+                    if (uniqueAgents.size === 0) {
+                        aBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:2rem;">No agents registered.</td></tr>`;
+                        return;
+                    }
+                    const decisionLogs = auditLogs.filter(l => l.type === 'final_decision');
+                    let html = '';
+                    uniqueAgents.forEach(agentId => {
+                        const agentActions = decisionLogs.filter(l => l.agent_id === agentId);
+                        html += `<tr>
+                            <td><span class="agent-id">${agentId}</span></td>
+                            <td>—</td><td>—</td><td>—</td>
+                            <td>${agentActions.length}</td>
+                            <td><span class="status-pill status-approved">Active</span></td>
+                        </tr>`;
+                    });
+                    aBody.innerHTML = html;
+                    return;
+                }
+                const decisionLogs = auditLogs.filter(l => l.type === 'final_decision');
+                let html = '';
+                data.agents.forEach(agent => {
+                    const aid = agent.agent_id || agent.id || 'unknown';
+                    const name = agent.name || '—';
+                    const role = (agent.attributes && agent.attributes.role) || '—';
+                    const registered = agent.registered_at ? new Date(agent.registered_at).toLocaleString() : (agent.timestamp ? new Date(agent.timestamp).toLocaleString() : '—');
+                    const actionCount = decisionLogs.filter(l => l.agent_id === aid).length;
+                    html += `<tr>
+                        <td><span class="agent-id">${aid}</span></td>
+                        <td>${name}</td>
+                        <td>${role}</td>
+                        <td class="mono" style="opacity:0.7;">${registered}</td>
+                        <td>${actionCount}</td>
+                        <td><span class="status-pill status-approved">Registered</span></td>
+                    </tr>`;
+                });
+                aBody.innerHTML = html;
+            } catch (err) {
+                aBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:2rem;">Failed to load agents: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // System Status — populates Home hero card from /system_status
+        // ───────────────────────────────────────────────────────────────
+        async function fetchSystemStatus() {
+            const titleEl = document.getElementById('home-system-title');
+            const descEl = document.getElementById('home-system-desc');
+            if (!titleEl || !descEl) return;
+            try {
+                const res = await fetch(`${API_URL}/system_status`);
+                const data = await res.json();
+                const statusEmoji = data.status === 'healthy' ? '✅' : '⚠️';
+                titleEl.textContent = `System Status: ${statusEmoji} ${data.status === 'healthy' ? 'Operational' : data.status}`;
+                descEl.textContent = `${data.service || 'Guard Backbone'} — ${data.agents_registered} agents registered, ${data.total_audit_events} audit events, ${data.interventions} interventions, ${data.active_policies} active policies.`;
+            } catch (err) {
+                titleEl.textContent = 'System Status: ⚠️ Unreachable';
+                descEl.textContent = `Could not connect to backend: ${err.message}`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Reporting Page — fetches from /analytics endpoint
+        // ───────────────────────────────────────────────────────────────
+        async function fetchReportingPage() {
+            const totalEl = document.getElementById('rpt-total-actions');
+            const blockedEl = document.getElementById('rpt-blocked');
+            const agentsEl = document.getElementById('rpt-active-agents');
+            const barsEl = document.getElementById('rpt-chart-bars');
+            const labelsEl = document.getElementById('rpt-chart-labels');
+            const breakdownBody = document.getElementById('rpt-breakdown-body');
+            if (!totalEl) return;
+            try {
+                const res = await fetch(`${API_URL}/analytics`);
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Invalid analytics response');
+                const a = data.analytics;
+                totalEl.textContent = (a.total_events || 0).toLocaleString();
+                blockedEl.textContent = (a.interventions || 0).toLocaleString();
+                agentsEl.textContent = (a.active_agents || 0).toLocaleString();
+
+                // Render dynamic bar chart from event_type_breakdown
+                const breakdown = a.event_type_breakdown || {};
+                const entries = Object.entries(breakdown);
+                if (entries.length > 0 && barsEl && labelsEl) {
+                    const maxVal = Math.max(...entries.map(([, v]) => v), 1);
+                    barsEl.innerHTML = entries.map(([key, val]) => {
+                        const pct = Math.max(5, (val / maxVal) * 100);
+                        const opacity = 0.4 + (val / maxVal) * 0.6;
+                        return `<div style="flex:1;height:${pct}%;background:var(--primary-purple);opacity:${opacity.toFixed(2)};border-radius:4px 4px 0 0;transition:opacity 0.2s;cursor:pointer;" title="${key}: ${val}" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='${opacity.toFixed(2)}'"></div>`;
+                    }).join('');
+                    labelsEl.innerHTML = entries.map(([key]) =>
+                        `<span style="flex:1;text-align:center;">${key.replace(/_/g, ' ')}</span>`
+                    ).join('');
+                }
+
+                // Render breakdown table
+                if (breakdownBody && entries.length > 0) {
+                    const total = entries.reduce((s, [, v]) => s + v, 0);
+                    breakdownBody.innerHTML = entries.map(([key, val]) => {
+                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                        return `<tr>
+                            <td style="font-weight:500;">${key.replace(/_/g, ' ')}</td>
+                            <td>${val.toLocaleString()}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div style="flex:1;background:var(--border-color);border-radius:4px;height:8px;overflow:hidden;">
+                                        <div style="width:${pct}%;height:100%;background:var(--primary-purple);border-radius:4px;"></div>
+                                    </div>
+                                    <span class="mono">${pct}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                } else if (breakdownBody) {
+                    breakdownBody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">No event data available yet.</td></tr>`;
+                }
+            } catch (err) {
+                if (totalEl) totalEl.textContent = '—';
+                if (blockedEl) blockedEl.textContent = '—';
+                if (agentsEl) agentsEl.textContent = '—';
+                if (breakdownBody) breakdownBody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">Failed: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Workflows Page — derives from audit log proposals
+        // ───────────────────────────────────────────────────────────────
+        function renderWorkflowsPage() {
+            const tbody = document.getElementById('workflows-body');
+            if (!tbody) return;
+            // Derive workflow proposals from governance events in the audit log
+            const wfEvents = auditLogs.filter(l =>
+                l.type === 'governance_proposal' ||
+                (l.changes && l.changes.new_workflow)
+            );
+            if (wfEvents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">No workflows configured. Use "New Workflow" to create one.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = wfEvents.map(evt => {
+                const wf = (evt.changes && evt.changes.new_workflow) || {};
+                const name = wf.name || evt.action_type || 'Unnamed Workflow';
+                const trigger = wf.trigger || 'manual';
+                return `<tr>
+                    <td style="font-weight:500;">${name}</td>
+                    <td>${trigger}</td>
+                    <td><span class="status-pill status-approved">Active</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Payments Page — shows economic engine payment config
+        // ───────────────────────────────────────────────────────────────
+        async function fetchPaymentsPage() {
+            const content = document.getElementById('payments-content');
+            if (!content) return;
+            try {
+                const res = await fetch(`${API_URL}/balances`);
+                const data = await res.json();
+                const b = data.balances || {};
+                content.innerHTML = `
+                    <h2>Payment Configuration</h2>
+                    <p>Payment processing is managed through the Guard Backbone economic engine.</p>
+                    <div style="margin-top:1rem;color:var(--text-secondary);">
+                        <strong>Default currency:</strong> ${b.currency || 'USD'}<br>
+                        <strong>Economic source:</strong> ${b.source || 'economic_engine'}<br>
+                        <strong>Active agent:</strong> ${b.agent_id || 'N/A'}<br>
+                        <strong>Funds available:</strong> ${b.has_funds ? 'Yes' : 'No'}<br>
+                        <strong>Available budget:</strong> ${formatUsd(b.available_budget)}
+                    </div>
+                `;
+            } catch (err) {
+                content.innerHTML = `
+                    <h2>Payment Configuration</h2>
+                    <p style="color:var(--danger-color);">Failed to load: ${err.message}</p>
+                `;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Billing Page — shows spending from economic data
+        // ───────────────────────────────────────────────────────────────
+        async function fetchBillingPage() {
+            const content = document.getElementById('billing-content');
+            if (!content) return;
+            try {
+                const res = await fetch(`${API_URL}/balances`);
+                const data = await res.json();
+                const b = data.balances || {};
+                const ceiling = b.budget_ceiling !== null && b.budget_ceiling !== undefined ? formatUsd(b.budget_ceiling) : 'Not defined';
+                const spent = (b.budget_ceiling && b.available_budget !== undefined) ? formatUsd(b.budget_ceiling - b.available_budget) : formatUsd(0);
+                const now = new Date();
+                const monthName = now.toLocaleString('default', { month: 'short', year: 'numeric' });
+                content.innerHTML = `
+                    <div class="info-card">
+                        <div style="display:flex;justify-content:space-between;">
+                            <h3>Current Period (${monthName})</h3>
+                            <div style="font-weight:600;">${spent}</div>
+                        </div>
+                        <p style="margin-top:0.5rem;">Budget ceiling: ${ceiling} | Remaining: ${formatUsd(b.available_budget)} ${b.currency || 'USD'}</p>
+                        <div style="margin-top:1rem;">
+                            <div style="background:var(--border-color);border-radius:4px;height:10px;overflow:hidden;">
+                                <div style="width:${b.budget_ceiling ? Math.min(100, ((b.budget_ceiling - (b.available_budget || 0)) / b.budget_ceiling) * 100).toFixed(1) : 0}%;height:100%;background:var(--primary-purple);border-radius:4px;transition:width 0.5s;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                content.innerHTML = `<div class="info-card"><p style="color:var(--danger-color);">Failed to load billing: ${err.message}</p></div>`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Master refresh — called by "Refresh System State" button
+        // ───────────────────────────────────────────────────────────────
+        async function refreshAllData() {
+            await fetchAudit();
+            fetchSystemStatus();
+            fetchAgentsPage();
+            fetchBalancesPage();
+            fetchProductCatalogPage();
+            fetchPolicyOverviewPage();
+            fetchAtlasPage();
+            fetchReportingPage();
+            fetchPaymentsPage();
+            fetchBillingPage();
+            renderWorkflowsPage();
+        }
+
         function refreshSubsystemPage(pageId) {
+            if (pageId === 'page-home') fetchSystemStatus();
             if (pageId === 'page-balances') fetchBalancesPage();
             if (pageId === 'page-product-catalog') fetchProductCatalogPage();
             if (pageId === 'page-policy-overview') fetchPolicyOverviewPage();
             if (pageId === 'page-atlas') fetchAtlasPage();
+            if (pageId === 'page-agents') fetchAgentsPage();
+            if (pageId === 'page-reporting') fetchReportingPage();
+            if (pageId === 'page-workflows') renderWorkflowsPage();
+            if (pageId === 'page-payments') fetchPaymentsPage();
+            if (pageId === 'page-billing') fetchBillingPage();
         }
 
         // ───────────────────────────────────────────────────────────────
@@ -1701,10 +1884,16 @@
         // ───────────────────────────────────────────────────────────────
         fetchAudit().then(() => {
             connectSSE();
+            fetchSystemStatus();
+            fetchAgentsPage();
             fetchBalancesPage();
             fetchProductCatalogPage();
             fetchPolicyOverviewPage();
             fetchAtlasPage();
+            fetchReportingPage();
+            fetchPaymentsPage();
+            fetchBillingPage();
+            renderWorkflowsPage();
         });
 
         // Sidebar Navigation Logic
@@ -1829,7 +2018,8 @@
                     document.getElementById('reg-agent-id').value = '';
                     document.getElementById('reg-agent-name').value = '';
                     document.getElementById('reg-agent-role').value = '';
-                    // Refresh audit to pick up new agent
+                    // Refresh agents to pick up new registration
+                    fetchAgentsPage();
                     fetchAudit();
                 } else {
                     showActionToast(`Registration failed: ${data.detail || JSON.stringify(data)}`, 'error');

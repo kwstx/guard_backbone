@@ -940,36 +940,98 @@
             <div id="page-reporting" class="page-section" style="display: none;">
                 <div class="page-header">
                     <h1>Analytics & Reporting</h1>
+                    <button class="btn-secondary">Export Report</button>
                 </div>
-                <div class="hero-card"
-                    style="position: relative; height: 300px; display: flex; align-items: flex-end; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0; border-radius: 8px; overflow: hidden; background: white;">
+
+                <div class="split-cards" style="grid-template-columns: 1fr 1fr 1fr;">
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Total
+                            Actions Scanned</h3>
+                        <div style="font-size: 2rem; font-weight: 600; margin-top: 8px;">12,450</div>
+                    </div>
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Blocked
+                            Threats</h3>
+                        <div style="font-size: 2rem; font-weight: 600; margin-top: 8px; color: var(--danger-color);">342
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Avg.
+                            Risk Score</h3>
+                        <div style="font-size: 2rem; font-weight: 600; margin-top: 8px;">1.45</div>
+                    </div>
+                </div>
+
+                <div class="hero-card">
+                    <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Action Throughput (Last 7 Days)</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Overview of agent
+                        executions and system autonomy across all configured environments.</p>
+
                     <div
-                        style="width: 13%; height: 20%; background: var(--primary-purple); opacity: 0.3; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                        style="display: flex; align-items: flex-end; gap: 1rem; height: 180px; border-bottom: 1px solid var(--border-color); padding-bottom: 0;">
+                        <div style="flex: 1; height: 30%; background: var(--primary-purple); opacity: 0.4; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'"></div>
+                        <div style="flex: 1; height: 50%; background: var(--primary-purple); opacity: 0.5; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'"></div>
+                        <div style="flex: 1; height: 40%; background: var(--primary-purple); opacity: 0.45; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'"></div>
+                        <div style="flex: 1; height: 80%; background: var(--primary-purple); opacity: 0.8; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></div>
+                        <div style="flex: 1; height: 60%; background: var(--primary-purple); opacity: 0.6; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"></div>
+                        <div style="flex: 1; height: 90%; background: var(--primary-purple); opacity: 0.9; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'"></div>
+                        <div style="flex: 1; height: 100%; background: var(--primary-purple); opacity: 1; border-top-left-radius: 4px; border-top-right-radius: 4px; transition: opacity 0.2s; cursor: pointer;"
+                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></div>
                     </div>
                     <div
-                        style="width: 13%; height: 50%; background: var(--primary-purple); opacity: 0.5; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                        style="display: flex; justify-content: space-between; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.75rem; font-weight: 500;">
+                        <span style="flex: 1; text-align: center;">Mon</span>
+                        <span style="flex: 1; text-align: center;">Tue</span>
+                        <span style="flex: 1; text-align: center;">Wed</span>
+                        <span style="flex: 1; text-align: center;">Thu</span>
+                        <span style="flex: 1; text-align: center;">Fri</span>
+                        <span style="flex: 1; text-align: center;">Sat</span>
+                        <span style="flex: 1; text-align: center;">Sun</span>
                     </div>
-                    <div
-                        style="width: 13%; height: 30%; background: var(--primary-purple); opacity: 0.4; border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div
-                        style="width: 13%; height: 80%; background: var(--primary-purple); opacity: 0.8; border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div
-                        style="width: 13%; height: 60%; background: var(--primary-purple); opacity: 0.6; border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div
-                        style="width: 13%; height: 90%; background: var(--primary-purple); opacity: 0.9; border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div
-                        style="width: 13%; height: 100%; background: var(--primary-purple); border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div style="position: absolute; top: 2rem; left: 2rem;">
-                        <h2 style="font-size: 1.25rem;">Action Throughput</h2>
-                        <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.9rem;">Agent executions
-                            per day over the last 7 days. Reflects overall autonomy usage across all configured
-                            integrations.</p>
-                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Generated Reports</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Date Range</th>
+                                <th>Generated</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 500;">Weekly Executive Summary</td>
+                                <td>Feb 23 - Mar 01, 2026</td>
+                                <td>Mar 02, 2026</td>
+                                <td><span class="status-pill status-approved">Ready</span></td>
+                                <td><a href="#" class="link-text">Download</a></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">Monthly Risk Assessment</td>
+                                <td>February 2026</td>
+                                <td>Mar 01, 2026</td>
+                                <td><span class="status-pill status-approved">Ready</span></td>
+                                <td><a href="#" class="link-text">Download</a></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">Q1 Infrastructure Impact</td>
+                                <td>Jan 01 - Mar 31, 2026</td>
+                                <td>-</td>
+                                <td><span class="status-pill" style="background: #e3e8ee;">Draft</span></td>
+                                <td><a href="#" class="link-text">View Progress</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

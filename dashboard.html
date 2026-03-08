@@ -594,73 +594,384 @@
             Unable to connect to Guard Backbone. Displaying last cached security records.
         </div>
         <div class="main-content">
-            <div class="page-header">
-                <h1>Security Audit Ledger</h1>
-                <button class="btn-primary">
-                    <span style="font-size: 1.2rem; line-height: 1;">+</span> Create custom policy rule <span
-                        style="background: rgba(255,255,255,0.2); border-radius: 4px; padding: 0 4px; margin-left: 4px; font-size: 10px;">N</span>
-                </button>
-            </div>
+            <div id="page-security-ledger" class="page-section">
+                <div class="page-header">
+                    <h1>Security Audit Ledger</h1>
+                    <button class="btn-primary">
+                        <span style="font-size: 1.2rem; line-height: 1;">+</span> Create custom policy rule <span
+                            style="background: rgba(255,255,255,0.2); border-radius: 4px; padding: 0 4px; margin-left: 4px; font-size: 10px;">N</span>
+                    </button>
+                </div>
 
-            <div class="tabs">
-                <div class="tab">Overview</div>
-                <div class="tab">Active Agents</div>
-                <div class="tab">Risk Thresholds</div>
-                <div class="tab">Impact Simulator</div>
-                <div class="tab active">Audit Ledger <span
-                        style="background: #e3e8ee; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px;">Preview</span>
+                <div class="tabs">
+                    <div class="tab">Overview</div>
+                    <div class="tab">Active Agents</div>
+                    <div class="tab">Risk Thresholds</div>
+                    <div class="tab">Impact Simulator</div>
+                    <div class="tab active">Audit Ledger <span
+                            style="background: #e3e8ee; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px;">Preview</span>
+                    </div>
+                </div>
+
+                <!-- Intro Card -->
+                <div class="hero-card">
+                    <h2>Verifiable tamper-evident ledger</h2>
+                    <p>Track agent actions, review risk scores, and verify the immutable SHA-256 hash chains of all
+                        autonomy
+                        policy decisions. Capture simulation results and enforce safety constraints using real-time
+                        physical
+                        blast radius analysis.</p>
+                    <button class="btn-primary">Export audit records</button>
+                </div>
+
+                <!-- Split Info Cards -->
+                <div class="split-cards">
+                    <div class="info-card">
+                        <h3>Automatically evaluate infrastructure impact</h3>
+                        <p>Guard Backbone's new simulator simplifies how you evaluate high-risk actions. Send the
+                            agent's
+                            Terraform execution plan to the simulation layer. We'll return the predicted resources
+                            deleted,
+                            modified, or created to calculate a deterministic risk score.</p>
+                        <a href="#" class="link-text">View docs</a>
+                    </div>
+                    <div class="info-card">
+                        <h3>Compare risk scoring across environments</h3>
+                        <p>Impact thresholds change frequently. Make informed decisions with up-to-date blast radius
+                            metrics
+                            evaluated in an isolated sandbox environment before applying changes to production.</p>
+                        <a href="#" class="link-text">View simulations</a>
+                    </div>
+                </div>
+
+                <!-- Table Section for live logs -->
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Recent Activity Log</h3>
+                <div class="table-container">
+                    <table id="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Agent ID</th>
+                                <th>Action</th>
+                                <th>Status</th>
+                                <th>Risk Score</th>
+                                <th>SHA-256 Chain</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-body">
+                            <tr>
+                                <td colspan="6"
+                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                    Loading audit records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Intro Card -->
-            <div class="hero-card">
-                <h2>Verifiable tamper-evident ledger</h2>
-                <p>Track agent actions, review risk scores, and verify the immutable SHA-256 hash chains of all autonomy
-                    policy decisions. Capture simulation results and enforce safety constraints using real-time physical
-                    blast radius analysis.</p>
-                <button class="btn-primary">Export audit records</button>
+            <!-- Added UI Pages -->
+            <!-- HOME -->
+            <div id="page-home" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Dashboard Home</h1>
+                </div>
+                <div class="split-cards" style="grid-template-columns: 1fr 1fr 1fr;">
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Active
+                            Agents</h3>
+                        <div id="home-active-agents" style="font-size: 2rem; font-weight: 600; margin-top: 8px;">0</div>
+                    </div>
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Total
+                            Ledger Events</h3>
+                        <div id="home-total-events" style="font-size: 2rem; font-weight: 600; margin-top: 8px;">0</div>
+                    </div>
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">
+                            Interventions</h3>
+                        <div id="home-interventions"
+                            style="font-size: 2rem; font-weight: 600; margin-top: 8px; color: var(--danger-color);">0
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-card">
+                    <h2>System Status: Operational</h2>
+                    <p>Guard Backbone is currently processing traffic normally. The security ledger is actively
+                        recording agent autonomy decisions.</p>
+                    <button class="btn-primary" onclick="fetchAudit()">Refresh System State</button>
+                </div>
             </div>
 
-            <!-- Split Info Cards -->
-            <div class="split-cards">
+            <!-- BALANCES -->
+            <div id="page-balances" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Balances</h1>
+                </div>
+                <div class="hero-card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase;">
+                            Available API Budget</h3>
+                        <div
+                            style="font-size: 2.5rem; font-weight: 600; margin-top: 8px; font-family: 'JetBrains Mono', Consolas, monospace;">
+                            $14,250.00</div>
+                    </div>
+                    <button class="btn-primary">Add Funds</button>
+                </div>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Recent Top-ups</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mar 1, 2026</td>
+                                <td>$5,000.00</td>
+                                <td>Bank Transfer (ach)</td>
+                                <td><span class="status-pill status-approved">Cleared</span></td>
+                            </tr>
+                            <tr>
+                                <td>Feb 15, 2026</td>
+                                <td>$10,000.00</td>
+                                <td>Credit Card ending in 4242</td>
+                                <td><span class="status-pill status-approved">Cleared</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TRANSACTIONS -->
+            <div id="page-transactions" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Transactions</h1>
+                    <button class="btn-secondary">Export CSV</button>
+                </div>
+                <div class="hero-card" style="padding: 1.5rem;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Live Autonomy Transactions &
+                        Tool Calls</h3>
+                    <p>Unlike financial transactions, these represent deterministic actions attempted by autonomous
+                        agents.</p>
+                </div>
+                <div class="table-container">
+                    <table id="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Agent ID</th>
+                                <th>Operation</th>
+                                <th>Cost Estimate</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-body">
+                            <tr>
+                                <td colspan="5"
+                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading
+                                    transactions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- AGENTS -->
+            <div id="page-agents" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Active Agents</h1>
+                    <button class="btn-primary">Register New Agent</button>
+                </div>
+                <div class="table-container">
+                    <table id="agents-table">
+                        <thead>
+                            <tr>
+                                <th>Agent Identity</th>
+                                <th>Last Ping</th>
+                                <th>Total Actions</th>
+                                <th>Risk Profile</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agents-body">
+                            <tr>
+                                <td colspan="5"
+                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading
+                                    agents from ledger...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PRODUCT CATALOG -->
+            <div id="page-product-catalog" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Product Catalog</h1>
+                </div>
+                <div class="split-cards">
+                    <div class="info-card">
+                        <h3>Standard VM Provisioning</h3>
+                        <p>Allow agents to provision standard t3.micro web servers for testing environments.</p>
+                        <div style="margin-top: 1rem; font-weight: 500;">$0.015 / hour</div>
+                    </div>
+                    <div class="info-card">
+                        <h3>Database Modification (DML)</h3>
+                        <p>Standard data manipulation product definition. Highly monitored by Guard.</p>
+                        <div style="margin-top: 1rem; font-weight: 500;">Variable Risk</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POLICY OVERVIEW -->
+            <div id="page-policy-overview" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Policy Overview</h1>
+                    <button class="btn-primary">Edit Policies (Rego)</button>
+                </div>
+                <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--danger-color);">
+                    <h3>Default Deny Enabled</h3>
+                    <p>All autonomous actions are dropped unless explicitly allowed by an active policy.</p>
+                </div>
+                <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--primary-purple);">
+                    <h3>SRE Alpha Bypass Rule</h3>
+                    <p>Allows `sre-bot-alpha` to restart nodes, but explicitly prevents database deletion. (Circuit
+                        breaker applied via Python decorator).</p>
+                </div>
+                <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--primary-purple);">
+                    <h3>Budget Thresholds</h3>
+                    <p>Maximum infrastructure creation cost is capped at $50 per hour per agent.</p>
+                </div>
+            </div>
+
+            <!-- ATLAS -->
+            <div id="page-atlas" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Guard Atlas Map</h1>
+                </div>
+                <div class="hero-card" style="text-align: center; padding: 4rem 2rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="color: var(--primary-purple); margin-bottom: 1rem;">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                        <line x1="9" y1="3" x2="9" y2="18"></line>
+                        <line x1="15" y1="6" x2="15" y2="21"></line>
+                    </svg>
+                    <h2 style="margin-bottom: 0.5rem;">Infrastructure Atlas is compiling...</h2>
+                    <p style="margin: 0 auto; max-width: 400px; color: var(--text-secondary);">The Atlas maps your
+                        physical infrastructure and calculates blast radius probabilities. It usually takes 5-10 minutes
+                        to sync with cloud providers.</p>
+                </div>
+            </div>
+
+            <!-- WORKFLOWS -->
+            <div id="page-workflows" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Workflows</h1>
+                    <button class="btn-primary">New Workflow</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Workflow Name</th>
+                                <th>Trigger</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Automatic Incident Resolution</td>
+                                <td>Sentry Alert (500s)</td>
+                                <td><span class="status-pill status-approved">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>Database Cleanup</td>
+                                <td>Nightly (CRON)</td>
+                                <td><span class="status-pill status-approved">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>Financial Reconciliation</td>
+                                <td>End of Month</td>
+                                <td><span class="status-pill" style="background: #e3e8ee;">Paused</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAYMENTS -->
+            <div id="page-payments" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Payments</h1>
+                </div>
+                <div class="hero-card">
+                    <h2>Payment configuration</h2>
+                    <p>You can configure webhook endpoints for payment events and sync with external systems.</p>
+                    <div style="margin-top: 1rem; color: var(--text-secondary);">
+                        <strong>Default currency:</strong> USD <br>
+                        <strong>Payment processor:</strong> Stripe Connect
+                    </div>
+                </div>
+            </div>
+
+            <!-- BILLING -->
+            <div id="page-billing" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Billing Details</h1>
+                </div>
                 <div class="info-card">
-                    <h3>Automatically evaluate infrastructure impact</h3>
-                    <p>Guard Backbone's new simulator simplifies how you evaluate high-risk actions. Send the agent's
-                        Terraform execution plan to the simulation layer. We'll return the predicted resources deleted,
-                        modified, or created to calculate a deterministic risk score.</p>
-                    <a href="#" class="link-text">View docs</a>
-                </div>
-                <div class="info-card">
-                    <h3>Compare risk scoring across environments</h3>
-                    <p>Impact thresholds change frequently. Make informed decisions with up-to-date blast radius metrics
-                        evaluated in an isolated sandbox environment before applying changes to production.</p>
-                    <a href="#" class="link-text">View simulations</a>
+                    <div style="display: flex; justify-content: space-between;">
+                        <h3>Current invoice (Mar 2026)</h3>
+                        <div style="font-weight: 600;">$0.00</div>
+                    </div>
+                    <p>No billing data generated yet for this period. Guard Backbone runs on a local sandbox in this
+                        instance.</p>
+                    <div class="btn-secondary" style="margin-top: 1rem; display: inline-block;">Manage Subscription
+                    </div>
                 </div>
             </div>
 
-            <!-- Table Section for live logs -->
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Recent Activity Log</h3>
-            <div class="table-container">
-                <table id="audit-table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Agent ID</th>
-                            <th>Action</th>
-                            <th>Status</th>
-                            <th>Risk Score</th>
-                            <th>SHA-256 Chain</th>
-                        </tr>
-                    </thead>
-                    <tbody id="audit-body">
-                        <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-                                Loading audit records...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- REPORTING -->
+            <div id="page-reporting" class="page-section" style="display: none;">
+                <div class="page-header">
+                    <h1>Analytics & Reporting</h1>
+                </div>
+                <div class="hero-card"
+                    style="position: relative; height: 300px; display: flex; align-items: flex-end; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0; border-radius: 8px; overflow: hidden; background: white;">
+                    <div
+                        style="width: 13%; height: 20%; background: var(--primary-purple); opacity: 0.3; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div
+                        style="width: 13%; height: 50%; background: var(--primary-purple); opacity: 0.5; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div
+                        style="width: 13%; height: 30%; background: var(--primary-purple); opacity: 0.4; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div
+                        style="width: 13%; height: 80%; background: var(--primary-purple); opacity: 0.8; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div
+                        style="width: 13%; height: 60%; background: var(--primary-purple); opacity: 0.6; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div
+                        style="width: 13%; height: 90%; background: var(--primary-purple); opacity: 0.9; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div
+                        style="width: 13%; height: 100%; background: var(--primary-purple); border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    </div>
+                    <div style="position: absolute; top: 2rem; left: 2rem;">
+                        <h2 style="font-size: 1.25rem;">Action Throughput</h2>
+                        <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.9rem;">Agent executions
+                            per day over the last 7 days. Reflects overall autonomy usage across all configured
+                            integrations.</p>
+                    </div>
+                </div>
             </div>
-
         </div>
     </div>
 
@@ -768,11 +1079,62 @@
         }
 
         function updateDashboard(logs) {
-            const body = document.getElementById('audit-body');
+            // Update Dashboard Analytics Panel (Home Page)
+            document.getElementById('home-total-events').innerText = logs.length;
             const decisionLogs = logs.filter(log => log.type === 'final_decision');
+            const deniedCount = decisionLogs.filter(log => !log.is_authorized).length;
+            document.getElementById('home-interventions').innerText = deniedCount;
 
+            const uniqueAgents = new Set(logs.map(l => l.agent_id).filter(id => id));
+            document.getElementById('home-active-agents').innerText = uniqueAgents.size;
+
+            // Transactions binding
+            const tBody = document.getElementById('transactions-body');
             if (decisionLogs.length === 0) {
-                body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No events found on the ledger.</td></tr>`;
+                tBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No transactions found.</td></tr>`;
+            } else {
+                let tHtml = '';
+                decisionLogs.slice(0, 50).forEach(log => {
+                    const date = new Date(log.timestamp);
+                    const isDenied = !log.is_authorized;
+                    tHtml += `<tr>
+                        <td class="mono">${date.toLocaleString()}</td>
+                        <td><span class="agent-id">${log.agent_id}</span></td>
+                        <td>${log.action_type || 'unknown'}</td>
+                        <td class="mono">$${((log.risk_score || 0) * 0.05).toFixed(4)}</td>
+                        <td><span class="status-pill ${isDenied ? 'status-denied' : 'status-approved'}">${isDenied ? 'Blocked' : 'Processed'}</span></td>
+                    </tr>`;
+                });
+                tBody.innerHTML = tHtml;
+            }
+
+            // Agents Table Default Load
+            const aBody = document.getElementById('agents-body');
+            if (uniqueAgents.size === 0) {
+                aBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No agents found on ledger.</td></tr>`;
+            } else {
+                let aHtml = '';
+                uniqueAgents.forEach(agentId => {
+                    const agentLogs = decisionLogs.filter(l => l.agent_id === agentId);
+                    const lastPing = agentLogs.length > 0 ? new Date(agentLogs[0].timestamp).toLocaleString() : 'N/A';
+                    const totalActions = agentLogs.length;
+                    const avgRisk = agentLogs.length > 0 ? (agentLogs.reduce((acc, l) => acc + (l.risk_score || 0), 0) / agentLogs.length).toFixed(2) : 0.00;
+
+                    aHtml += `<tr>
+                        <td><span class="agent-id">${agentId}</span></td>
+                        <td class="mono" style="opacity: 0.7;">${lastPing}</td>
+                        <td>${totalActions}</td>
+                        <td>Score: ${avgRisk}</td>
+                        <td><span class="status-pill status-approved">Active</span></td>
+                    </tr>`;
+                });
+                aBody.innerHTML = aHtml;
+            }
+
+            // Standard Security Ledger Default Update
+            const auditBody = document.getElementById('audit-body');
+            if (decisionLogs.length === 0) {
+                auditBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No events found on the ledger.</td></tr>`;
                 return;
             }
 
@@ -806,12 +1168,61 @@
                 `;
             });
 
-            body.innerHTML = html;
+            auditBody.innerHTML = html;
         }
 
         // Initialize polling
         fetchAudit();
         pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
+
+        // Sidebar Navigation Logic
+        const navItems = document.querySelectorAll('.nav-item');
+
+        // Map names to their valid container ids
+        const pagesMap = {
+            'Home': 'page-home',
+            'Balances': 'page-balances',
+            'Transactions': 'page-transactions',
+            'Agents': 'page-agents',
+            'Product catalog': 'page-product-catalog',
+            'Security Ledger': 'page-security-ledger',
+            'Policy overview': 'page-policy-overview',
+            'Atlas': 'page-atlas',
+            'Workflows': 'page-workflows',
+            'Payments': 'page-payments',
+            'Billing': 'page-billing',
+            'Reporting': 'page-reporting'
+        };
+
+        // Get all pages references dynamically
+        const allPages = Object.values(pagesMap).map(id => document.getElementById(id)).filter(p => p);
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Ensure text formatting removes spaces and SVG remnants. 
+                // .textContent grabs the text along with raw spaces from nested tags
+                // We'll extract carefully
+                const pageName = item.textContent.trim().replace(/\n/g, '').replace(/  +/g, ' ');
+
+                if (pagesMap[pageName]) {
+                    // Update Active styling
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+
+                    // Hide everything
+                    allPages.forEach(p => p.style.display = 'none');
+                    // Show valid
+                    const activePage = document.getElementById(pagesMap[pageName]);
+                    if (activePage) activePage.style.display = 'block';
+                }
+            });
+        });
+
+        // Show Home by default assuming it's the first menu option, unless security ledger was pre-selected
+        if (document.getElementById('page-home')) {
+            allPages.forEach(p => p.style.display = 'none');
+            document.getElementById('page-security-ledger').style.display = 'block';
+        }
     </script>
 </body>
 

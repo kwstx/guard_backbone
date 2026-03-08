@@ -434,6 +434,179 @@
             font-weight: 500;
             border-bottom: 1px solid #ffe7cc;
         }
+
+        /* SSE Connection Indicator */
+        .connection-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .connection-indicator .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .connection-indicator.live {
+            background: var(--success-bg);
+            color: var(--success-color);
+        }
+
+        .connection-indicator.live .dot {
+            background: var(--success-color);
+            animation: pulse-dot 2s infinite;
+        }
+
+        .connection-indicator.connecting {
+            background: #fff4e5;
+            color: #663c00;
+        }
+
+        .connection-indicator.connecting .dot {
+            background: #d97706;
+        }
+
+        .connection-indicator.offline {
+            background: var(--danger-bg);
+            color: var(--danger-color);
+        }
+
+        .connection-indicator.offline .dot {
+            background: var(--danger-color);
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Toast notification for real-time events */
+        .sse-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text-main);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(.4, 0, .2, 1);
+            z-index: 2000;
+            max-width: 380px;
+        }
+
+        .sse-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ── Action Modal Overrides ───────────────────────────────── */
+        .action-modal .modal-content {
+            width: 480px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-family: "JetBrains Mono", Consolas, monospace;
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.5;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn-primary.loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .btn-primary.loading::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: btn-spin 0.6s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes btn-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Action result toast */
+        .action-toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 22px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translateY(-40px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(.4, 0, .2, 1);
+            z-index: 3000;
+            max-width: 420px;
+        }
+
+        .action-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .action-toast.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .action-toast.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
     </style>
 </head>
 
@@ -464,7 +637,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
                     <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12M17 20l-4-4M17 20l4-4" />
-                </svg> Transactions
+                </svg> Actions
             </div>
             <div class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -565,6 +738,8 @@
                 <input type="text" placeholder="Search">
             </div>
             <div class="topbar-icons">
+                <span id="conn-indicator" class="connection-indicator connecting"><span
+                        class="dot"></span>Connecting</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="cursor: pointer;">
@@ -597,7 +772,7 @@
             <div id="page-security-ledger" class="page-section">
                 <div class="page-header">
                     <h1>Security Audit Ledger</h1>
-                    <button class="btn-primary">
+                    <button id="btn-create-policy" class="btn-primary">
                         <span style="font-size: 1.2rem; line-height: 1;">+</span> Create custom policy rule <span
                             style="background: rgba(255,255,255,0.2); border-radius: 4px; padding: 0 4px; margin-left: 4px; font-size: 10px;">N</span>
                     </button>
@@ -621,7 +796,7 @@
                         policy decisions. Capture simulation results and enforce safety constraints using real-time
                         physical
                         blast radius analysis.</p>
-                    <button class="btn-primary">Export audit records</button>
+                    <button id="btn-export-audit" class="btn-primary">Export audit records</button>
                 </div>
 
                 <!-- Split Info Cards -->
@@ -695,10 +870,9 @@
                     </div>
                 </div>
                 <div class="hero-card">
-                    <h2>System Status: Operational</h2>
-                    <p>Guard Backbone is currently processing traffic normally. The security ledger is actively
-                        recording agent autonomy decisions.</p>
-                    <button class="btn-primary" onclick="fetchAudit()">Refresh System State</button>
+                    <h2 id="home-system-title">System Status: Connecting...</h2>
+                    <p id="home-system-desc">Querying Guard Backbone for live system status...</p>
+                    <button class="btn-primary" onclick="refreshAllData()">Refresh System State</button>
                 </div>
             </div>
 
@@ -711,55 +885,32 @@
                     <div>
                         <h3 style="color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase;">
                             Available API Budget</h3>
-                        <div
+                        <div id="balances-available-budget"
                             style="font-size: 2.5rem; font-weight: 600; margin-top: 8px; font-family: 'JetBrains Mono', Consolas, monospace;">
-                            $14,250.00</div>
+                            Loading...</div>
+                        <p id="balances-meta" style="margin-top: 8px; color: var(--text-secondary);">Querying economic
+                            engine...</p>
                     </div>
-                    <button class="btn-primary">Add Funds</button>
+                    <button id="btn-add-funds" class="btn-primary">Add Funds</button>
                 </div>
-                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Recent Top-ups</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Amount</th>
-                                <th>Method</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Mar 1, 2026</td>
-                                <td>$5,000.00</td>
-                                <td>Bank Transfer (ach)</td>
-                                <td><span class="status-pill status-approved">Cleared</span></td>
-                            </tr>
-                            <tr>
-                                <td>Feb 15, 2026</td>
-                                <td>$10,000.00</td>
-                                <td>Credit Card ending in 4242</td>
-                                <td><span class="status-pill status-approved">Cleared</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div id="balances-summary-cards" class="split-cards"></div>
             </div>
 
-            <!-- TRANSACTIONS -->
-            <div id="page-transactions" class="page-section" style="display: none;">
+            <!-- ACTIONS -->
+            <div id="page-actions" class="page-section" style="display: none;">
                 <div class="page-header">
-                    <h1>Transactions</h1>
-                    <button class="btn-secondary">Export CSV</button>
+                    <h1>Actions</h1>
+                    <button id="btn-export-csv" class="btn-secondary">Export CSV</button>
                 </div>
                 <div class="hero-card" style="padding: 1.5rem;">
-                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Live Autonomy Transactions &
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Live Autonomy Actions &
                         Tool Calls</h3>
-                    <p>Unlike financial transactions, these represent deterministic actions attempted by autonomous
+                    <p>Unlike typical financial transactions, these represent deterministic actions attempted by
+                        autonomous
                         agents.</p>
                 </div>
                 <div class="table-container">
-                    <table id="transactions-table">
+                    <table id="actions-table">
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
@@ -769,11 +920,12 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody id="transactions-body">
+                        <tbody id="actions-body">
                             <tr>
                                 <td colspan="5"
-                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading
-                                    transactions...</td>
+                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                    Loading live autonomy
+                                    actions...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -784,24 +936,25 @@
             <div id="page-agents" class="page-section" style="display: none;">
                 <div class="page-header">
                     <h1>Active Agents</h1>
-                    <button class="btn-primary">Register New Agent</button>
+                    <button id="btn-register-agent" class="btn-primary">Register New Agent</button>
                 </div>
                 <div class="table-container">
                     <table id="agents-table">
                         <thead>
                             <tr>
                                 <th>Agent Identity</th>
-                                <th>Last Ping</th>
-                                <th>Total Actions</th>
-                                <th>Risk Profile</th>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Registered</th>
+                                <th>Ledger Actions</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="agents-body">
                             <tr>
-                                <td colspan="5"
+                                <td colspan="6"
                                     style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading
-                                    agents from ledger...</td>
+                                    agents...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -813,39 +966,19 @@
                 <div class="page-header">
                     <h1>Product Catalog</h1>
                 </div>
-                <div class="split-cards">
-                    <div class="info-card">
-                        <h3>Standard VM Provisioning</h3>
-                        <p>Allow agents to provision standard t3.micro web servers for testing environments.</p>
-                        <div style="margin-top: 1rem; font-weight: 500;">$0.015 / hour</div>
-                    </div>
-                    <div class="info-card">
-                        <h3>Database Modification (DML)</h3>
-                        <p>Standard data manipulation product definition. Highly monitored by Guard.</p>
-                        <div style="margin-top: 1rem; font-weight: 500;">Variable Risk</div>
-                    </div>
-                </div>
+                <div id="catalog-meta" class="hero-card" style="margin-bottom: 1rem;">Loading economic products...</div>
+                <div id="product-catalog-list" class="split-cards"></div>
             </div>
 
             <!-- POLICY OVERVIEW -->
             <div id="page-policy-overview" class="page-section" style="display: none;">
                 <div class="page-header">
                     <h1>Policy Overview</h1>
-                    <button class="btn-primary">Edit Policies (Rego)</button>
+                    <button id="btn-edit-policies" class="btn-primary">Edit Policies (Rego)</button>
                 </div>
-                <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--danger-color);">
-                    <h3>Default Deny Enabled</h3>
-                    <p>All autonomous actions are dropped unless explicitly allowed by an active policy.</p>
-                </div>
-                <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--primary-purple);">
-                    <h3>SRE Alpha Bypass Rule</h3>
-                    <p>Allows `sre-bot-alpha` to restart nodes, but explicitly prevents database deletion. (Circuit
-                        breaker applied via Python decorator).</p>
-                </div>
-                <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--primary-purple);">
-                    <h3>Budget Thresholds</h3>
-                    <p>Maximum infrastructure creation cost is capped at $50 per hour per agent.</p>
-                </div>
+                <div id="policy-source-meta" class="hero-card" style="margin-bottom: 1rem;">Loading policy agent
+                    rules...</div>
+                <div id="policy-overview-list"></div>
             </div>
 
             <!-- ATLAS -->
@@ -853,26 +986,15 @@
                 <div class="page-header">
                     <h1>Guard Atlas Map</h1>
                 </div>
-                <div class="hero-card" style="text-align: center; padding: 4rem 2rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                        style="color: var(--primary-purple); margin-bottom: 1rem;">
-                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-                        <line x1="9" y1="3" x2="9" y2="18"></line>
-                        <line x1="15" y1="6" x2="15" y2="21"></line>
-                    </svg>
-                    <h2 style="margin-bottom: 0.5rem;">Infrastructure Atlas is compiling...</h2>
-                    <p style="margin: 0 auto; max-width: 400px; color: var(--text-secondary);">The Atlas maps your
-                        physical infrastructure and calculates blast radius probabilities. It usually takes 5-10 minutes
-                        to sync with cloud providers.</p>
-                </div>
+                <div id="atlas-meta" class="hero-card" style="margin-bottom: 1rem;">Loading simulation outputs...</div>
+                <div id="atlas-scenarios"></div>
             </div>
 
             <!-- WORKFLOWS -->
             <div id="page-workflows" class="page-section" style="display: none;">
                 <div class="page-header">
                     <h1>Workflows</h1>
-                    <button class="btn-primary">New Workflow</button>
+                    <button id="btn-new-workflow" class="btn-primary">New Workflow</button>
                 </div>
                 <div class="table-container">
                     <table>
@@ -883,21 +1005,10 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="workflows-body">
                             <tr>
-                                <td>Automatic Incident Resolution</td>
-                                <td>Sentry Alert (500s)</td>
-                                <td><span class="status-pill status-approved">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td>Database Cleanup</td>
-                                <td>Nightly (CRON)</td>
-                                <td><span class="status-pill status-approved">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td>Financial Reconciliation</td>
-                                <td>End of Month</td>
-                                <td><span class="status-pill" style="background: #e3e8ee;">Paused</span></td>
+                                <td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">
+                                    Loading workflows...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -909,13 +1020,9 @@
                 <div class="page-header">
                     <h1>Payments</h1>
                 </div>
-                <div class="hero-card">
-                    <h2>Payment configuration</h2>
-                    <p>You can configure webhook endpoints for payment events and sync with external systems.</p>
-                    <div style="margin-top: 1rem; color: var(--text-secondary);">
-                        <strong>Default currency:</strong> USD <br>
-                        <strong>Payment processor:</strong> Stripe Connect
-                    </div>
+                <div id="payments-content" class="hero-card">
+                    <h2>Payment Configuration</h2>
+                    <p>Loading payment data from economic engine...</p>
                 </div>
             </div>
 
@@ -924,14 +1031,10 @@
                 <div class="page-header">
                     <h1>Billing Details</h1>
                 </div>
-                <div class="info-card">
-                    <div style="display: flex; justify-content: space-between;">
-                        <h3>Current invoice (Mar 2026)</h3>
-                        <div style="font-weight: 600;">$0.00</div>
-                    </div>
-                    <p>No billing data generated yet for this period. Guard Backbone runs on a local sandbox in this
-                        instance.</p>
-                    <div class="btn-secondary" style="margin-top: 1rem; display: inline-block;">Manage Subscription
+                <div id="billing-content">
+                    <div class="info-card">
+                        <p style="color:var(--text-secondary);padding:1rem;text-align:center;">Loading billing
+                            details...</p>
                     </div>
                 </div>
             </div>
@@ -940,36 +1043,62 @@
             <div id="page-reporting" class="page-section" style="display: none;">
                 <div class="page-header">
                     <h1>Analytics & Reporting</h1>
+                    <button id="btn-export-report" class="btn-secondary">Export Report</button>
                 </div>
-                <div class="hero-card"
-                    style="position: relative; height: 300px; display: flex; align-items: flex-end; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0; border-radius: 8px; overflow: hidden; background: white;">
-                    <div
-                        style="width: 13%; height: 20%; background: var(--primary-purple); opacity: 0.3; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+
+                <div class="split-cards" style="grid-template-columns: 1fr 1fr 1fr;">
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Total
+                            Actions Scanned</h3>
+                        <div id="rpt-total-actions" style="font-size: 2rem; font-weight: 600; margin-top: 8px;">—</div>
                     </div>
-                    <div
-                        style="width: 13%; height: 50%; background: var(--primary-purple); opacity: 0.5; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Blocked
+                            Threats</h3>
+                        <div id="rpt-blocked"
+                            style="font-size: 2rem; font-weight: 600; margin-top: 8px; color: var(--danger-color);">—
+                        </div>
                     </div>
-                    <div
-                        style="width: 13%; height: 30%; background: var(--primary-purple); opacity: 0.4; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Active
+                            Agents</h3>
+                        <div id="rpt-active-agents" style="font-size: 2rem; font-weight: 600; margin-top: 8px;">—</div>
                     </div>
-                    <div
-                        style="width: 13%; height: 80%; background: var(--primary-purple); opacity: 0.8; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                </div>
+
+                <div class="hero-card">
+                    <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Event Type Breakdown</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Distribution of
+                        events by type across all audit records.</p>
+                    <div id="rpt-chart-bars"
+                        style="display: flex; align-items: flex-end; gap: 1rem; height: 180px; border-bottom: 1px solid var(--border-color); padding-bottom: 0;">
+                        <div
+                            style="flex:1;height:10%;background:var(--primary-purple);opacity:0.3;border-radius:4px 4px 0 0;">
+                        </div>
                     </div>
-                    <div
-                        style="width: 13%; height: 60%; background: var(--primary-purple); opacity: 0.6; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                    <div id="rpt-chart-labels"
+                        style="display: flex; justify-content: space-between; margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.75rem; font-weight: 500;">
+                        <span style="flex:1;text-align:center;">Loading...</span>
                     </div>
-                    <div
-                        style="width: 13%; height: 90%; background: var(--primary-purple); opacity: 0.9; border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div
-                        style="width: 13%; height: 100%; background: var(--primary-purple); border-top-left-radius: 4px; border-top-right-radius: 4px;">
-                    </div>
-                    <div style="position: absolute; top: 2rem; left: 2rem;">
-                        <h2 style="font-size: 1.25rem;">Action Throughput</h2>
-                        <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.9rem;">Agent executions
-                            per day over the last 7 days. Reflects overall autonomy usage across all configured
-                            integrations.</p>
-                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Event Type Details</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Event Type</th>
+                                <th>Count</th>
+                                <th>Proportion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rpt-breakdown-body">
+                            <tr>
+                                <td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">
+                                    Loading analytics...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -987,8 +1116,10 @@
                 <input type="text" id="api-url-input" placeholder="http://localhost:8000">
             </div>
             <div class="form-group">
-                <label>Update Interval (ms)</label>
-                <input type="number" id="interval-input" placeholder="2000">
+                <label>Connection Mode</label>
+                <div
+                    style="font-size: 0.85rem; color: var(--text-secondary); padding: 0.6rem; background: var(--bg-card); border-radius: 6px;">
+                    Server-Sent Events (real-time push)</div>
             </div>
             <div class="form-actions">
                 <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
@@ -997,89 +1128,313 @@
         </div>
     </div>
 
-    <script>
-        // State Persistence & Configuration
-        let API_URL = localStorage.getItem('BACKBONE_API_URL') || 'http://localhost:8000';
-        let REFRESH_INTERVAL = parseInt(localStorage.getItem('REFRESH_INTERVAL')) || 2000;
-        let pollTimer = null;
+    <!-- SSE Toast -->
+    <div id="sse-toast" class="sse-toast"></div>
 
-        // UI Initialization
+    <!-- Action Result Toast -->
+    <div id="action-toast" class="action-toast"></div>
+
+    <!-- ═══ Register Agent Modal ═══ -->
+    <div id="register-agent-modal" class="modal-overlay action-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Register New Agent
+                <span style="cursor:pointer; font-size:1.4rem; line-height:1;"
+                    onclick="closeModal('register-agent-modal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Agent ID</label>
+                <input type="text" id="reg-agent-id" placeholder="e.g. sre-bot-alpha">
+            </div>
+            <div class="form-group">
+                <label>Display Name (optional)</label>
+                <input type="text" id="reg-agent-name" placeholder="e.g. SRE Bot Alpha">
+            </div>
+            <div class="form-group">
+                <label>Role / Attributes</label>
+                <input type="text" id="reg-agent-role" placeholder="e.g. infrastructure-admin">
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="closeModal('register-agent-modal')">Cancel</button>
+                <button id="reg-agent-submit" class="btn-primary" onclick="submitRegisterAgent()">Register
+                    Agent</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Create Policy Modal ═══ -->
+    <div id="create-policy-modal" class="modal-overlay action-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Create Custom Policy Rule
+                <span style="cursor:pointer; font-size:1.4rem; line-height:1;"
+                    onclick="closeModal('create-policy-modal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Proposer Agent ID</label>
+                <input type="text" id="policy-proposer-id" placeholder="e.g. admin-agent">
+            </div>
+            <div class="form-group">
+                <label>Policy Name / Key</label>
+                <input type="text" id="policy-name" placeholder="e.g. max_budget">
+            </div>
+            <div class="form-group">
+                <label>Policy Value</label>
+                <input type="text" id="policy-value" placeholder="e.g. 5000">
+            </div>
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <input type="text" id="policy-description" placeholder="Set max agent budget to $5000">
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="closeModal('create-policy-modal')">Cancel</button>
+                <button id="policy-submit" class="btn-primary" onclick="submitCreatePolicy()">Submit Proposal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Add Funds Modal ═══ -->
+    <div id="add-funds-modal" class="modal-overlay action-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Add API Budget Funds
+                <span style="cursor:pointer; font-size:1.4rem; line-height:1;"
+                    onclick="closeModal('add-funds-modal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Proposer Agent ID</label>
+                <input type="text" id="funds-proposer-id" placeholder="e.g. admin-agent">
+            </div>
+            <div class="form-group">
+                <label>Amount (USD)</label>
+                <input type="number" id="funds-amount" placeholder="1000" min="1" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Funding Method</label>
+                <select id="funds-method">
+                    <option value="bank_transfer">Bank Transfer (ACH)</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="manual_top_up">Manual Top-up</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="closeModal('add-funds-modal')">Cancel</button>
+                <button id="funds-submit" class="btn-primary" onclick="submitAddFunds()">Add Funds</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ New Workflow Modal ═══ -->
+    <div id="new-workflow-modal" class="modal-overlay action-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Create New Workflow
+                <span style="cursor:pointer; font-size:1.4rem; line-height:1;"
+                    onclick="closeModal('new-workflow-modal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Proposer Agent ID</label>
+                <input type="text" id="wf-proposer-id" placeholder="e.g. admin-agent">
+            </div>
+            <div class="form-group">
+                <label>Workflow Name</label>
+                <input type="text" id="wf-name" placeholder="e.g. Auto Scale Down">
+            </div>
+            <div class="form-group">
+                <label>Trigger Type</label>
+                <select id="wf-trigger">
+                    <option value="alert">Alert-based (Sentry / PagerDuty)</option>
+                    <option value="cron">Scheduled (CRON)</option>
+                    <option value="manual">Manual Trigger</option>
+                    <option value="event">Event-driven</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="wf-description" placeholder="Describe what this workflow does">
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="closeModal('new-workflow-modal')">Cancel</button>
+                <button id="wf-submit" class="btn-primary" onclick="submitNewWorkflow()">Create Workflow</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Edit Policies Modal ═══ -->
+    <div id="edit-policies-modal" class="modal-overlay action-modal">
+        <div class="modal-content" style="width: 600px;">
+            <div class="modal-header">
+                Edit Policies (Rego)
+                <span style="cursor:pointer; font-size:1.4rem; line-height:1;"
+                    onclick="closeModal('edit-policies-modal')">&times;</span>
+            </div>
+            <div id="policies-list" style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.85rem;">
+                Loading policy files...
+            </div>
+            <div class="form-group">
+                <label>Selected Policy Content</label>
+                <textarea id="policy-editor" placeholder="Select a policy above to load its Rego source..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Proposer Agent ID (for change proposal)</label>
+                <input type="text" id="edit-policy-proposer" placeholder="e.g. admin-agent">
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="closeModal('edit-policies-modal')">Cancel</button>
+                <button id="edit-policy-submit" class="btn-primary" onclick="submitEditPolicy()">Submit Policy
+                    Change</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ───────────────────────────────────────────────────────────────
+        // State & Configuration
+        // ───────────────────────────────────────────────────────────────
+        let API_URL = localStorage.getItem('BACKBONE_API_URL') || 'http://localhost:8000';
+        let eventSource = null;
+        let auditLogs = [];   // in-memory mirror of the full ledger
+
+        // UI Init
         document.getElementById('api-url-input').value = API_URL;
-        document.getElementById('interval-input').value = REFRESH_INTERVAL;
 
         // Settings Logic
         const settingsTrigger = document.getElementById('settings-trigger');
         const settingsModal = document.getElementById('settings-modal');
-
         settingsTrigger.onclick = () => settingsModal.style.display = 'flex';
         function closeSettings() { settingsModal.style.display = 'none'; }
 
         function saveSettings() {
             API_URL = document.getElementById('api-url-input').value;
-            REFRESH_INTERVAL = parseInt(document.getElementById('interval-input').value);
             localStorage.setItem('BACKBONE_API_URL', API_URL);
-            localStorage.setItem('REFRESH_INTERVAL', REFRESH_INTERVAL);
             closeSettings();
-
-            // Restart polling with new settings
-            clearInterval(pollTimer);
-            fetchAudit();
-            pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
+            // Reconnect SSE with new URL
+            connectSSE();
+            refreshAllData();
         }
 
-        // Notification Logic
-        if ("Notification" in window) {
-            Notification.requestPermission();
-        }
+        // Notification permission
+        if ('Notification' in window) Notification.requestPermission();
 
         function triggerSecurityAlert(log) {
-            if (Notification.permission === "granted") {
-                new Notification("Sovereign Denied Action", {
+            if (Notification.permission === 'granted') {
+                new Notification('Sovereign Denied Action', {
                     body: `Agent ${log.agent_id} attempted restricted action: ${log.action_type || 'unknown'}`,
-                    icon: "https://via.placeholder.com/64" // Replace with real icon path in GUI bundle
                 });
             }
         }
 
+        // ───────────────────────────────────────────────────────────────
+        // Connection Status Indicator
+        // ───────────────────────────────────────────────────────────────
+        function setConnectionStatus(state) {
+            const el = document.getElementById('conn-indicator');
+            if (!el) return;
+            el.className = 'connection-indicator ' + state;
+            const labels = { live: 'Live', connecting: 'Connecting', offline: 'Offline' };
+            el.innerHTML = `<span class="dot"></span>${labels[state] || state}`;
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Toast helper for real-time event notifications
+        // ───────────────────────────────────────────────────────────────
+        let toastTimer = null;
+        function showToast(message) {
+            const t = document.getElementById('sse-toast');
+            t.textContent = message;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // REST: Full initial fetch (runs once on load)
+        // ───────────────────────────────────────────────────────────────
         async function fetchAudit() {
             try {
                 const response = await fetch(`${API_URL}/audit`);
                 const data = await response.json();
-
                 if (data.status === 'success') {
                     document.getElementById('offline-banner').style.display = 'none';
-                    const logs = data.audit_logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                    // Check for new denials for notifications
-                    checkNewDenials(logs);
-
-                    // Persistent Cache
-                    localStorage.setItem('AUDIT_CACHE', JSON.stringify(logs));
-                    updateDashboard(logs);
+                    auditLogs = data.audit_logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    localStorage.setItem('AUDIT_CACHE', JSON.stringify(auditLogs));
+                    // Prime knownIds so we don't alert on historical events
+                    auditLogs.forEach(l => knownIds.add(`${l.timestamp}-${l.agent_id}`));
+                    updateDashboard(auditLogs);
                 }
-            } catch (error) {
-                console.error('Failed to fetch audit logs:', error);
-                document.getElementById('offline-banner').style.display = 'block';
+            } catch (err) {
+                console.warn('[REST] Initial fetch failed:', err.message);
                 const cached = localStorage.getItem('AUDIT_CACHE');
-                if (cached) updateDashboard(JSON.parse(cached));
+                if (cached) { auditLogs = JSON.parse(cached); updateDashboard(auditLogs); }
             }
         }
 
-        let knownIds = new Set();
-        function checkNewDenials(logs) {
-            logs.filter(l => l.type === 'final_decision' && !l.is_authorized).forEach(log => {
-                const uid = `${log.timestamp}-${log.agent_id}`;
-                if (!knownIds.has(uid) && knownIds.size > 0) { // Only alert on new items after first load
-                    triggerSecurityAlert(log);
-                }
-                knownIds.add(uid);
+        // ───────────────────────────────────────────────────────────────
+        // SSE: Persistent real-time connection (replaces setInterval)
+        // ───────────────────────────────────────────────────────────────
+        function connectSSE() {
+            // Tear down any existing connection
+            if (eventSource) { eventSource.close(); eventSource = null; }
+
+            setConnectionStatus('connecting');
+
+            eventSource = new EventSource(`${API_URL}/events`);
+
+            eventSource.addEventListener('connected', (e) => {
+                console.log('[SSE] Stream open', JSON.parse(e.data));
+                setConnectionStatus('live');
             });
-            // Prime the initial set
-            if (knownIds.size === 0) logs.forEach(l => knownIds.add(`${l.timestamp}-${l.agent_id}`));
+
+            eventSource.addEventListener('audit', (e) => {
+                const envelope = JSON.parse(e.data);
+                const evt = envelope.data;
+
+                // Deduplicate — skip if we already have this event_id
+                if (evt.event_id && auditLogs.some(l => l.event_id === evt.event_id)) return;
+
+                // Prepend (newest first)
+                auditLogs.unshift(evt);
+                localStorage.setItem('AUDIT_CACHE', JSON.stringify(auditLogs));
+
+                // Check for denial alerts
+                if (evt.type === 'final_decision' && !evt.is_authorized) {
+                    triggerSecurityAlert(evt);
+                    showToast(`🛑 Denied: ${evt.agent_id} → ${evt.action_type || 'unknown'}`);
+                } else if (evt.type === 'final_decision') {
+                    showToast(`✅ Approved: ${evt.agent_id} → ${evt.action_type || 'unknown'}`);
+                } else if (evt.type === 'agent_registration') {
+                    showToast(`👤 New Agent: ${evt.agent_id}`);
+                    fetchAgentsPage();
+                    fetchSystemStatus();
+                } else if (evt.type === 'governance_proposal') {
+                    showToast(`📜 New Workflow Proposal`);
+                    renderWorkflowsPage();
+                }
+
+                updateDashboard(auditLogs);
+            });
+
+            eventSource.onerror = () => {
+                setConnectionStatus('offline');
+                document.getElementById('offline-banner').style.display = 'block';
+                // EventSource auto-reconnects; we update the indicator when it does
+            };
+
+            eventSource.onopen = () => {
+                setConnectionStatus('live');
+                document.getElementById('offline-banner').style.display = 'none';
+            };
         }
 
+        // ───────────────────────────────────────────────────────────────
+        // Denials tracking
+        // ───────────────────────────────────────────────────────────────
+        let knownIds = new Set();
+
+        // ───────────────────────────────────────────────────────────────
+        // Dashboard Renderer (unchanged logic, same as before)
+        // ───────────────────────────────────────────────────────────────
         function updateDashboard(logs) {
-            // Update Dashboard Analytics Panel (Home Page)
             document.getElementById('home-total-events').innerText = logs.length;
             const decisionLogs = logs.filter(log => log.type === 'final_decision');
             const deniedCount = decisionLogs.filter(log => !log.is_authorized).length;
@@ -1088,63 +1443,47 @@
             const uniqueAgents = new Set(logs.map(l => l.agent_id).filter(id => id));
             document.getElementById('home-active-agents').innerText = uniqueAgents.size;
 
-            // Transactions binding
-            const tBody = document.getElementById('transactions-body');
-            if (decisionLogs.length === 0) {
-                tBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No transactions found.</td></tr>`;
-            } else {
-                let tHtml = '';
-                decisionLogs.slice(0, 50).forEach(log => {
-                    const date = new Date(log.timestamp);
-                    const isDenied = !log.is_authorized;
-                    tHtml += `<tr>
-                        <td class="mono">${date.toLocaleString()}</td>
-                        <td><span class="agent-id">${log.agent_id}</span></td>
-                        <td>${log.action_type || 'unknown'}</td>
-                        <td class="mono">$${((log.risk_score || 0) * 0.05).toFixed(4)}</td>
-                        <td><span class="status-pill ${isDenied ? 'status-denied' : 'status-approved'}">${isDenied ? 'Blocked' : 'Processed'}</span></td>
-                    </tr>`;
-                });
-                tBody.innerHTML = tHtml;
+            // Update derived components
+            renderWorkflowsPage();
+            fetchReportingPage();
+
+            // Actions
+            const tBody = document.getElementById('actions-body');
+            if (tBody) {
+                if (decisionLogs.length === 0) {
+                    tBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No actions found.</td></tr>`;
+                } else {
+                    let tHtml = '';
+                    decisionLogs.slice(0, 50).forEach(log => {
+                        const date = new Date(log.timestamp);
+                        const isDenied = !log.is_authorized;
+                        tHtml += `<tr>
+                            <td class="mono">${date.toLocaleString()}</td>
+                            <td><span class="agent-id">${log.agent_id}</span></td>
+                            <td>${log.action_type || 'unknown'}</td>
+                            <td class="mono">$${((log.risk_score || 0) * 0.05).toFixed(4)}</td>
+                            <td><span class="status-pill ${isDenied ? 'status-denied' : 'status-approved'}">${isDenied ? 'Blocked' : 'Processed'}</span></td>
+                        </tr>`;
+                    });
+                    tBody.innerHTML = tHtml;
+                }
             }
 
-            // Agents Table Default Load
-            const aBody = document.getElementById('agents-body');
-            if (uniqueAgents.size === 0) {
-                aBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No agents found on ledger.</td></tr>`;
-            } else {
-                let aHtml = '';
-                uniqueAgents.forEach(agentId => {
-                    const agentLogs = decisionLogs.filter(l => l.agent_id === agentId);
-                    const lastPing = agentLogs.length > 0 ? new Date(agentLogs[0].timestamp).toLocaleString() : 'N/A';
-                    const totalActions = agentLogs.length;
-                    const avgRisk = agentLogs.length > 0 ? (agentLogs.reduce((acc, l) => acc + (l.risk_score || 0), 0) / agentLogs.length).toFixed(2) : 0.00;
+            // Agents — rendered separately via fetchAgentsPage()
+            // (no-op here, agents table populated from /agents endpoint)
 
-                    aHtml += `<tr>
-                        <td><span class="agent-id">${agentId}</span></td>
-                        <td class="mono" style="opacity: 0.7;">${lastPing}</td>
-                        <td>${totalActions}</td>
-                        <td>Score: ${avgRisk}</td>
-                        <td><span class="status-pill status-approved">Active</span></td>
-                    </tr>`;
-                });
-                aBody.innerHTML = aHtml;
-            }
-
-            // Standard Security Ledger Default Update
+            // Security Ledger
             const auditBody = document.getElementById('audit-body');
             if (decisionLogs.length === 0) {
                 auditBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No events found on the ledger.</td></tr>`;
                 return;
             }
-
             let html = '';
             decisionLogs.forEach(log => {
                 const isDenied = !log.is_authorized;
                 const date = new Date(log.timestamp);
                 const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-
                 html += `
                     <tr>
                         <td style="white-space: nowrap;">
@@ -1167,22 +1506,407 @@
                     </tr>
                 `;
             });
-
             auditBody.innerHTML = html;
         }
 
-        // Initialize polling
-        fetchAudit();
-        pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
+        function formatUsd(amount) {
+            const numeric = Number(amount || 0);
+            return `$${numeric.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        async function fetchBalancesPage() {
+            const budgetEl = document.getElementById('balances-available-budget');
+            const metaEl = document.getElementById('balances-meta');
+            const cardsEl = document.getElementById('balances-summary-cards');
+            if (!budgetEl || !metaEl || !cardsEl) return;
+            try {
+                const res = await fetch(`${API_URL}/balances`);
+                const data = await res.json();
+                if (data.status !== 'success' || !data.balances) throw new Error('Invalid balances payload');
+                const b = data.balances;
+                budgetEl.textContent = formatUsd(b.available_budget);
+                metaEl.textContent = `Source: ${b.source || 'economic_engine'} | Agent: ${b.agent_id || 'unknown'} | Funds: ${b.has_funds ? 'available' : 'insufficient'}`;
+                cardsEl.innerHTML = `
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Policy Budget Ceiling</h3>
+                        <div style="font-size: 1.4rem; font-weight: 600; margin-top: 8px;">${b.budget_ceiling !== null && b.budget_ceiling !== undefined ? formatUsd(b.budget_ceiling) : 'Not defined'}</div>
+                    </div>
+                    <div class="info-card">
+                        <h3 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">Currency</h3>
+                        <div style="font-size: 1.4rem; font-weight: 600; margin-top: 8px;">${b.currency || 'USD'}</div>
+                    </div>
+                `;
+            } catch (err) {
+                budgetEl.textContent = 'Unavailable';
+                metaEl.textContent = `Failed to fetch balances: ${err.message}`;
+                cardsEl.innerHTML = '';
+            }
+        }
+
+        async function fetchProductCatalogPage() {
+            const listEl = document.getElementById('product-catalog-list');
+            const metaEl = document.getElementById('catalog-meta');
+            if (!listEl || !metaEl) return;
+            try {
+                const res = await fetch(`${API_URL}/economic/catalog`);
+                const data = await res.json();
+                if (data.status !== 'success' || !data.catalog) throw new Error('Invalid catalog payload');
+                const c = data.catalog;
+                metaEl.innerHTML = `<strong>Agent Budget:</strong> ${formatUsd(c.available_budget)} ${c.currency || 'USD'} <span style="opacity:0.7;">(source: ${c.source || 'economic_engine'})</span>`;
+                if (!Array.isArray(c.products) || c.products.length === 0) {
+                    listEl.innerHTML = '<div class="info-card">No product definitions available from the economic layer.</div>';
+                    return;
+                }
+                listEl.innerHTML = c.products.map((p) => `
+                    <div class="info-card">
+                        <h3>${p.name || p.id}</h3>
+                        <p>${p.description || 'No description available.'}</p>
+                        <div style="margin-top: 1rem; font-weight: 500;">${formatUsd(p.unit_price_usd)} / ${p.billing_unit || 'unit'}</div>
+                        <div style="margin-top: 0.5rem; color: var(--text-secondary);">Risk: ${p.risk_band || 'unknown'}</div>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="status-pill ${p.can_afford ? 'status-approved' : 'status-denied'}">${p.can_afford ? 'Affordable' : 'Insufficient funds'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                metaEl.textContent = `Failed to fetch catalog: ${err.message}`;
+                listEl.innerHTML = '';
+            }
+        }
+
+        async function fetchPolicyOverviewPage() {
+            const listEl = document.getElementById('policy-overview-list');
+            const metaEl = document.getElementById('policy-source-meta');
+            if (!listEl || !metaEl) return;
+            try {
+                const res = await fetch(`${API_URL}/policies`);
+                const data = await res.json();
+                const policies = Array.isArray(data.policies) ? data.policies : [];
+                metaEl.innerHTML = `<strong>Policy Source:</strong> ${data.source || 'unknown'} | <strong>Active Rules:</strong> ${policies.length}`;
+                if (policies.length === 0) {
+                    listEl.innerHTML = '<div class="info-card">No active firewall rules were returned by the policy subsystem.</div>';
+                    return;
+                }
+                listEl.innerHTML = policies.map((p) => `
+                    <div class="info-card" style="margin-bottom: 1rem; border-left: 4px solid var(--danger-color);">
+                        <h3>${p.package || p.filename || p.id}</h3>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Status: ${p.status || 'unknown'} | Enforcement: ${p.enforcement_level || 'n/a'}</p>
+                        <pre style="margin-top: 0.75rem; white-space: pre-wrap; color: var(--text-secondary); font-size: 0.8rem; max-height: 180px; overflow: auto;">${(p.content || '').replace(/</g, '&lt;')}</pre>
+                    </div>
+                `).join('');
+            } catch (err) {
+                metaEl.textContent = `Failed to fetch policies: ${err.message}`;
+                listEl.innerHTML = '';
+            }
+        }
+
+        async function fetchAtlasPage() {
+            const metaEl = document.getElementById('atlas-meta');
+            const listEl = document.getElementById('atlas-scenarios');
+            if (!metaEl || !listEl) return;
+            try {
+                const res = await fetch(`${API_URL}/atlas`);
+                const data = await res.json();
+                if (data.status !== 'success' || !data.atlas) throw new Error('Invalid atlas payload');
+                const atlas = data.atlas;
+                const scenarios = Array.isArray(atlas.scenarios) ? atlas.scenarios : [];
+                metaEl.innerHTML = `<strong>Simulation Layer:</strong> ${atlas.source || 'simulation_layer'} | <strong>Scenarios:</strong> ${atlas.scenario_count || scenarios.length}`;
+                if (scenarios.length === 0) {
+                    listEl.innerHTML = '<div class="info-card">No simulation scenarios are currently available.</div>';
+                    return;
+                }
+                listEl.innerHTML = scenarios.map((s) => `
+                    <div class="info-card" style="margin-bottom: 1rem;">
+                        <h3>${s.scenario}</h3>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Status: ${s.status} | Impact score: ${s.impact_score !== null && s.impact_score !== undefined ? s.impact_score : 'N/A'}</p>
+                        <pre style="margin-top: 0.75rem; white-space: pre-wrap; color: var(--text-secondary); font-size: 0.8rem; max-height: 180px; overflow: auto;">${JSON.stringify(s.details || {}, null, 2).replace(/</g, '&lt;')}</pre>
+                    </div>
+                `).join('');
+            } catch (err) {
+                metaEl.textContent = `Failed to fetch atlas: ${err.message}`;
+                listEl.innerHTML = '';
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Agents Page — fetches from /agents endpoint
+        // ───────────────────────────────────────────────────────────────
+        async function fetchAgentsPage() {
+            const aBody = document.getElementById('agents-body');
+            if (!aBody) return;
+            try {
+                const res = await fetch(`${API_URL}/agents`);
+                const data = await res.json();
+                if (data.status !== 'success' || !Array.isArray(data.agents) || data.agents.length === 0) {
+                    // Fallback: derive agents from audit logs
+                    const uniqueAgents = new Set(auditLogs.map(l => l.agent_id).filter(id => id));
+                    if (uniqueAgents.size === 0) {
+                        aBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:2rem;">No agents registered.</td></tr>`;
+                        return;
+                    }
+                    const decisionLogs = auditLogs.filter(l => l.type === 'final_decision');
+                    let html = '';
+                    uniqueAgents.forEach(agentId => {
+                        const agentActions = decisionLogs.filter(l => l.agent_id === agentId);
+                        html += `<tr>
+                            <td><span class="agent-id">${agentId}</span></td>
+                            <td>—</td><td>—</td><td>—</td>
+                            <td>${agentActions.length}</td>
+                            <td><span class="status-pill status-approved">Active</span></td>
+                        </tr>`;
+                    });
+                    aBody.innerHTML = html;
+                    return;
+                }
+                const decisionLogs = auditLogs.filter(l => l.type === 'final_decision');
+                let html = '';
+                data.agents.forEach(agent => {
+                    const aid = agent.agent_id || agent.id || 'unknown';
+                    const name = agent.name || '—';
+                    const role = (agent.attributes && agent.attributes.role) || '—';
+                    const registered = agent.registered_at ? new Date(agent.registered_at).toLocaleString() : (agent.timestamp ? new Date(agent.timestamp).toLocaleString() : '—');
+                    const actionCount = decisionLogs.filter(l => l.agent_id === aid).length;
+                    html += `<tr>
+                        <td><span class="agent-id">${aid}</span></td>
+                        <td>${name}</td>
+                        <td>${role}</td>
+                        <td class="mono" style="opacity:0.7;">${registered}</td>
+                        <td>${actionCount}</td>
+                        <td><span class="status-pill status-approved">Registered</span></td>
+                    </tr>`;
+                });
+                aBody.innerHTML = html;
+            } catch (err) {
+                aBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:2rem;">Failed to load agents: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // System Status — populates Home hero card from /system_status
+        // ───────────────────────────────────────────────────────────────
+        async function fetchSystemStatus() {
+            const titleEl = document.getElementById('home-system-title');
+            const descEl = document.getElementById('home-system-desc');
+            if (!titleEl || !descEl) return;
+            try {
+                const res = await fetch(`${API_URL}/system_status`);
+                const data = await res.json();
+                const statusEmoji = data.status === 'healthy' ? '✅' : '⚠️';
+                titleEl.textContent = `System Status: ${statusEmoji} ${data.status === 'healthy' ? 'Operational' : data.status}`;
+                descEl.textContent = `${data.service || 'Guard Backbone'} — ${data.agents_registered} agents registered, ${data.total_audit_events} audit events, ${data.interventions} interventions, ${data.active_policies} active policies.`;
+            } catch (err) {
+                titleEl.textContent = 'System Status: ⚠️ Unreachable';
+                descEl.textContent = `Could not connect to backend: ${err.message}`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Reporting Page — fetches from /analytics endpoint
+        // ───────────────────────────────────────────────────────────────
+        async function fetchReportingPage() {
+            const totalEl = document.getElementById('rpt-total-actions');
+            const blockedEl = document.getElementById('rpt-blocked');
+            const agentsEl = document.getElementById('rpt-active-agents');
+            const barsEl = document.getElementById('rpt-chart-bars');
+            const labelsEl = document.getElementById('rpt-chart-labels');
+            const breakdownBody = document.getElementById('rpt-breakdown-body');
+            if (!totalEl) return;
+            try {
+                const res = await fetch(`${API_URL}/analytics`);
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Invalid analytics response');
+                const a = data.analytics;
+                totalEl.textContent = (a.total_events || 0).toLocaleString();
+                blockedEl.textContent = (a.interventions || 0).toLocaleString();
+                agentsEl.textContent = (a.active_agents || 0).toLocaleString();
+
+                // Render dynamic bar chart from event_type_breakdown
+                const breakdown = a.event_type_breakdown || {};
+                const entries = Object.entries(breakdown);
+                if (entries.length > 0 && barsEl && labelsEl) {
+                    const maxVal = Math.max(...entries.map(([, v]) => v), 1);
+                    barsEl.innerHTML = entries.map(([key, val]) => {
+                        const pct = Math.max(5, (val / maxVal) * 100);
+                        const opacity = 0.4 + (val / maxVal) * 0.6;
+                        return `<div style="flex:1;height:${pct}%;background:var(--primary-purple);opacity:${opacity.toFixed(2)};border-radius:4px 4px 0 0;transition:opacity 0.2s;cursor:pointer;" title="${key}: ${val}" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='${opacity.toFixed(2)}'"></div>`;
+                    }).join('');
+                    labelsEl.innerHTML = entries.map(([key]) =>
+                        `<span style="flex:1;text-align:center;">${key.replace(/_/g, ' ')}</span>`
+                    ).join('');
+                }
+
+                // Render breakdown table
+                if (breakdownBody && entries.length > 0) {
+                    const total = entries.reduce((s, [, v]) => s + v, 0);
+                    breakdownBody.innerHTML = entries.map(([key, val]) => {
+                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                        return `<tr>
+                            <td style="font-weight:500;">${key.replace(/_/g, ' ')}</td>
+                            <td>${val.toLocaleString()}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div style="flex:1;background:var(--border-color);border-radius:4px;height:8px;overflow:hidden;">
+                                        <div style="width:${pct}%;height:100%;background:var(--primary-purple);border-radius:4px;"></div>
+                                    </div>
+                                    <span class="mono">${pct}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                } else if (breakdownBody) {
+                    breakdownBody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">No event data available yet.</td></tr>`;
+                }
+            } catch (err) {
+                if (totalEl) totalEl.textContent = '—';
+                if (blockedEl) blockedEl.textContent = '—';
+                if (agentsEl) agentsEl.textContent = '—';
+                if (breakdownBody) breakdownBody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">Failed: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Workflows Page — derives from audit log proposals
+        // ───────────────────────────────────────────────────────────────
+        function renderWorkflowsPage() {
+            const tbody = document.getElementById('workflows-body');
+            if (!tbody) return;
+            // Derive workflow proposals from governance events in the audit log
+            const wfEvents = auditLogs.filter(l =>
+                l.type === 'governance_proposal' ||
+                (l.changes && l.changes.new_workflow)
+            );
+            if (wfEvents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);padding:2rem;">No workflows configured. Use "New Workflow" to create one.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = wfEvents.map(evt => {
+                const wf = (evt.changes && evt.changes.new_workflow) || {};
+                const name = wf.name || evt.action_type || 'Unnamed Workflow';
+                const trigger = wf.trigger || 'manual';
+                return `<tr>
+                    <td style="font-weight:500;">${name}</td>
+                    <td>${trigger}</td>
+                    <td><span class="status-pill status-approved">Active</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Payments Page — shows economic engine payment config
+        // ───────────────────────────────────────────────────────────────
+        async function fetchPaymentsPage() {
+            const content = document.getElementById('payments-content');
+            if (!content) return;
+            try {
+                const res = await fetch(`${API_URL}/balances`);
+                const data = await res.json();
+                const b = data.balances || {};
+                content.innerHTML = `
+                    <h2>Payment Configuration</h2>
+                    <p>Payment processing is managed through the Guard Backbone economic engine.</p>
+                    <div style="margin-top:1rem;color:var(--text-secondary);">
+                        <strong>Default currency:</strong> ${b.currency || 'USD'}<br>
+                        <strong>Economic source:</strong> ${b.source || 'economic_engine'}<br>
+                        <strong>Active agent:</strong> ${b.agent_id || 'N/A'}<br>
+                        <strong>Funds available:</strong> ${b.has_funds ? 'Yes' : 'No'}<br>
+                        <strong>Available budget:</strong> ${formatUsd(b.available_budget)}
+                    </div>
+                `;
+            } catch (err) {
+                content.innerHTML = `
+                    <h2>Payment Configuration</h2>
+                    <p style="color:var(--danger-color);">Failed to load: ${err.message}</p>
+                `;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Billing Page — shows spending from economic data
+        // ───────────────────────────────────────────────────────────────
+        async function fetchBillingPage() {
+            const content = document.getElementById('billing-content');
+            if (!content) return;
+            try {
+                const res = await fetch(`${API_URL}/balances`);
+                const data = await res.json();
+                const b = data.balances || {};
+                const ceiling = b.budget_ceiling !== null && b.budget_ceiling !== undefined ? formatUsd(b.budget_ceiling) : 'Not defined';
+                const spent = (b.budget_ceiling && b.available_budget !== undefined) ? formatUsd(b.budget_ceiling - b.available_budget) : formatUsd(0);
+                const now = new Date();
+                const monthName = now.toLocaleString('default', { month: 'short', year: 'numeric' });
+                content.innerHTML = `
+                    <div class="info-card">
+                        <div style="display:flex;justify-content:space-between;">
+                            <h3>Current Period (${monthName})</h3>
+                            <div style="font-weight:600;">${spent}</div>
+                        </div>
+                        <p style="margin-top:0.5rem;">Budget ceiling: ${ceiling} | Remaining: ${formatUsd(b.available_budget)} ${b.currency || 'USD'}</p>
+                        <div style="margin-top:1rem;">
+                            <div style="background:var(--border-color);border-radius:4px;height:10px;overflow:hidden;">
+                                <div style="width:${b.budget_ceiling ? Math.min(100, ((b.budget_ceiling - (b.available_budget || 0)) / b.budget_ceiling) * 100).toFixed(1) : 0}%;height:100%;background:var(--primary-purple);border-radius:4px;transition:width 0.5s;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                content.innerHTML = `<div class="info-card"><p style="color:var(--danger-color);">Failed to load billing: ${err.message}</p></div>`;
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Master refresh — called by "Refresh System State" button
+        // ───────────────────────────────────────────────────────────────
+        async function refreshAllData() {
+            await fetchAudit();
+            fetchSystemStatus();
+            fetchAgentsPage();
+            fetchBalancesPage();
+            fetchProductCatalogPage();
+            fetchPolicyOverviewPage();
+            fetchAtlasPage();
+            fetchReportingPage();
+            fetchPaymentsPage();
+            fetchBillingPage();
+            renderWorkflowsPage();
+        }
+
+        function refreshSubsystemPage(pageId) {
+            if (pageId === 'page-home') fetchSystemStatus();
+            if (pageId === 'page-balances') fetchBalancesPage();
+            if (pageId === 'page-product-catalog') fetchProductCatalogPage();
+            if (pageId === 'page-policy-overview') fetchPolicyOverviewPage();
+            if (pageId === 'page-atlas') fetchAtlasPage();
+            if (pageId === 'page-agents') fetchAgentsPage();
+            if (pageId === 'page-reporting') fetchReportingPage();
+            if (pageId === 'page-workflows') renderWorkflowsPage();
+            if (pageId === 'page-payments') fetchPaymentsPage();
+            if (pageId === 'page-billing') fetchBillingPage();
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Boot: fetch once via REST, then open SSE stream
+        // ───────────────────────────────────────────────────────────────
+        fetchAudit().then(() => {
+            connectSSE();
+            fetchSystemStatus();
+            fetchAgentsPage();
+            fetchBalancesPage();
+            fetchProductCatalogPage();
+            fetchPolicyOverviewPage();
+            fetchAtlasPage();
+            fetchReportingPage();
+            fetchPaymentsPage();
+            fetchBillingPage();
+            renderWorkflowsPage();
+        });
 
         // Sidebar Navigation Logic
         const navItems = document.querySelectorAll('.nav-item');
 
-        // Map names to their valid container ids
         const pagesMap = {
             'Home': 'page-home',
             'Balances': 'page-balances',
-            'Transactions': 'page-transactions',
+            'Actions': 'page-actions',
             'Agents': 'page-agents',
             'Product catalog': 'page-product-catalog',
             'Security Ledger': 'page-security-ledger',
@@ -1194,35 +1918,457 @@
             'Reporting': 'page-reporting'
         };
 
-        // Get all pages references dynamically
         const allPages = Object.values(pagesMap).map(id => document.getElementById(id)).filter(p => p);
 
         navItems.forEach(item => {
             item.addEventListener('click', () => {
-                // Ensure text formatting removes spaces and SVG remnants. 
-                // .textContent grabs the text along with raw spaces from nested tags
-                // We'll extract carefully
                 const pageName = item.textContent.trim().replace(/\n/g, '').replace(/  +/g, ' ');
-
                 if (pagesMap[pageName]) {
-                    // Update Active styling
                     navItems.forEach(nav => nav.classList.remove('active'));
                     item.classList.add('active');
-
-                    // Hide everything
                     allPages.forEach(p => p.style.display = 'none');
-                    // Show valid
                     const activePage = document.getElementById(pagesMap[pageName]);
-                    if (activePage) activePage.style.display = 'block';
+                    if (activePage) {
+                        activePage.style.display = 'block';
+                        refreshSubsystemPage(activePage.id);
+                    }
                 }
             });
         });
 
-        // Show Home by default assuming it's the first menu option, unless security ledger was pre-selected
         if (document.getElementById('page-home')) {
             allPages.forEach(p => p.style.display = 'none');
             document.getElementById('page-security-ledger').style.display = 'block';
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // Step 3: Action Button Wiring
+        // ═══════════════════════════════════════════════════════════════
+
+        // ─── Modal Helpers ────────────────────────────────────────────
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Close any action modal on overlay click (click outside content)
+        document.querySelectorAll('.action-modal').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.style.display = 'none';
+            });
+        });
+
+        // ─── Action Toast (success / error feedback) ─────────────────
+        let actionToastTimer = null;
+        function showActionToast(message, type = 'success') {
+            const t = document.getElementById('action-toast');
+            t.textContent = message;
+            t.className = 'action-toast ' + type;
+            // Force reflow to restart animation
+            void t.offsetWidth;
+            t.classList.add('show');
+            clearTimeout(actionToastTimer);
+            actionToastTimer = setTimeout(() => t.classList.remove('show'), 4500);
+        }
+
+        // ─── Button Loading State ────────────────────────────────────
+        function setLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (loading) {
+                btn.classList.add('loading');
+                btn.dataset.origText = btn.textContent;
+            } else {
+                btn.classList.remove('loading');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 1. Register New Agent  →  POST /register_agent
+        // ═══════════════════════════════════════════════════════════════
+        document.getElementById('btn-register-agent').addEventListener('click', () => {
+            openModal('register-agent-modal');
+        });
+
+        async function submitRegisterAgent() {
+            const agentId = document.getElementById('reg-agent-id').value.trim();
+            const name = document.getElementById('reg-agent-name').value.trim();
+            const role = document.getElementById('reg-agent-role').value.trim();
+
+            if (!agentId) {
+                showActionToast('Agent ID is required.', 'error');
+                return;
+            }
+
+            setLoading('reg-agent-submit', true);
+            try {
+                const body = {
+                    agent_id: agentId,
+                    name: name || undefined,
+                    attributes: role ? { role: role } : {}
+                };
+                const res = await fetch(`${API_URL}/register_agent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    showActionToast(`✅ Agent "${agentId}" registered successfully.`);
+                    closeModal('register-agent-modal');
+                    // Clear form
+                    document.getElementById('reg-agent-id').value = '';
+                    document.getElementById('reg-agent-name').value = '';
+                    document.getElementById('reg-agent-role').value = '';
+                    // Refresh agents to pick up new registration
+                    fetchAgentsPage();
+                    fetchAudit();
+                } else {
+                    showActionToast(`Registration failed: ${data.detail || JSON.stringify(data)}`, 'error');
+                }
+            } catch (err) {
+                showActionToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                setLoading('reg-agent-submit', false);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 2. Create Custom Policy Rule  →  POST /propose_change
+        // ═══════════════════════════════════════════════════════════════
+        document.getElementById('btn-create-policy').addEventListener('click', () => {
+            openModal('create-policy-modal');
+        });
+
+        async function submitCreatePolicy() {
+            const proposerId = document.getElementById('policy-proposer-id').value.trim();
+            const policyName = document.getElementById('policy-name').value.trim();
+            const policyValue = document.getElementById('policy-value').value.trim();
+            const description = document.getElementById('policy-description').value.trim();
+
+            if (!proposerId || !policyName || !policyValue) {
+                showActionToast('Proposer ID, policy name, and policy value are required.', 'error');
+                return;
+            }
+
+            setLoading('policy-submit', true);
+            try {
+                const changes = {};
+                // Attempt to parse as number, else keep string
+                changes[policyName] = isNaN(policyValue) ? policyValue : Number(policyValue);
+                if (description) changes._description = description;
+
+                const res = await fetch(`${API_URL}/propose_change`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proposer_id: proposerId, changes })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    showActionToast(`✅ Policy proposal "${policyName}" submitted.`);
+                    closeModal('create-policy-modal');
+                    document.getElementById('policy-proposer-id').value = '';
+                    document.getElementById('policy-name').value = '';
+                    document.getElementById('policy-value').value = '';
+                    document.getElementById('policy-description').value = '';
+                } else {
+                    showActionToast(`Proposal failed: ${data.detail || JSON.stringify(data)}`, 'error');
+                }
+            } catch (err) {
+                showActionToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                setLoading('policy-submit', false);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 3. Add Funds  →  POST /propose_change
+        // ═══════════════════════════════════════════════════════════════
+        document.getElementById('btn-add-funds').addEventListener('click', () => {
+            openModal('add-funds-modal');
+        });
+
+        async function submitAddFunds() {
+            const proposerId = document.getElementById('funds-proposer-id').value.trim();
+            const amount = parseFloat(document.getElementById('funds-amount').value);
+            const method = document.getElementById('funds-method').value;
+
+            if (!proposerId) {
+                showActionToast('Proposer Agent ID is required.', 'error');
+                return;
+            }
+            if (!amount || amount <= 0) {
+                showActionToast('Please enter a valid positive amount.', 'error');
+                return;
+            }
+
+            setLoading('funds-submit', true);
+            try {
+                const res = await fetch(`${API_URL}/propose_change`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        proposer_id: proposerId,
+                        changes: {
+                            add_funds: amount,
+                            funding_method: method,
+                            _description: `Add $${amount.toFixed(2)} via ${method}`
+                        }
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    showActionToast(`✅ Funds proposal of $${amount.toFixed(2)} submitted.`);
+                    closeModal('add-funds-modal');
+                    document.getElementById('funds-proposer-id').value = '';
+                    document.getElementById('funds-amount').value = '';
+                } else {
+                    showActionToast(`Proposal failed: ${data.detail || JSON.stringify(data)}`, 'error');
+                }
+            } catch (err) {
+                showActionToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                setLoading('funds-submit', false);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 4. Export Audit Records  →  Client-side CSV download
+        // ═══════════════════════════════════════════════════════════════
+        document.getElementById('btn-export-audit').addEventListener('click', () => {
+            if (auditLogs.length === 0) {
+                showActionToast('No audit records to export.', 'error');
+                return;
+            }
+            const headers = ['Timestamp', 'Agent ID', 'Action Type', 'Authorized', 'Risk Score', 'Hash', 'Reason'];
+            const rows = auditLogs.map(l => [
+                l.timestamp || '',
+                l.agent_id || '',
+                l.action_type || '',
+                l.is_authorized !== undefined ? l.is_authorized : '',
+                l.risk_score !== undefined ? l.risk_score : '',
+                l.hash || '',
+                (l.reason || '').replace(/"/g, '""')
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+            downloadCSV(csv, 'audit_records.csv');
+            showActionToast(`✅ Exported ${auditLogs.length} audit records.`);
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // 5. Export CSV (Actions)  →  Client-side CSV download
+        document.getElementById('btn-export-csv').addEventListener('click', () => {
+            const decisionLogs = auditLogs.filter(l => l.type === 'final_decision');
+            if (decisionLogs.length === 0) {
+                showActionToast('No actions to export.', 'error');
+                return;
+            }
+            const headers = ['Timestamp', 'Agent ID', 'Operation', 'Cost Estimate', 'Status'];
+            const rows = decisionLogs.map(l => [
+                l.timestamp || '',
+                l.agent_id || '',
+                l.action_type || 'unknown',
+                '$' + ((l.risk_score || 0) * 0.05).toFixed(4),
+                l.is_authorized ? 'Processed' : 'Blocked'
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+            downloadCSV(csv, 'actions.csv');
+            showActionToast(`✅ Exported ${decisionLogs.length} actions.`);
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // 6. Edit Policies (Rego)  →  Fetch policies + submit via /propose_change
+        // ═══════════════════════════════════════════════════════════════
+        let loadedPolicies = []; // cached for the editor modal
+        let selectedPolicyIdx = -1;
+
+        document.getElementById('btn-edit-policies').addEventListener('click', async () => {
+            openModal('edit-policies-modal');
+            const listEl = document.getElementById('policies-list');
+            listEl.innerHTML = 'Loading policy files...';
+            try {
+                const res = await fetch(`${API_URL}/policies`);
+                const data = await res.json();
+                if (data.status === 'success' && data.policies.length > 0) {
+                    loadedPolicies = data.policies;
+                    let html = '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+                    data.policies.forEach((p, i) => {
+                        html += `<button class="btn-secondary" style="font-size:0.8rem;" onclick="selectPolicy(${i})">${p.filename}</button>`;
+                    });
+                    html += '</div>';
+                    listEl.innerHTML = html;
+                } else {
+                    listEl.innerHTML = 'No policy files found in the policies/ directory.';
+                }
+            } catch (err) {
+                listEl.innerHTML = `Failed to load policies: ${err.message}`;
+            }
+        });
+
+        function selectPolicy(index) {
+            selectedPolicyIdx = index;
+            const policy = loadedPolicies[index];
+            document.getElementById('policy-editor').value = policy.content || '';
+        }
+
+        async function submitEditPolicy() {
+            const proposerId = document.getElementById('edit-policy-proposer').value.trim();
+            const content = document.getElementById('policy-editor').value.trim();
+
+            if (!proposerId) {
+                showActionToast('Proposer Agent ID is required.', 'error');
+                return;
+            }
+            if (!content) {
+                showActionToast('Policy content cannot be empty.', 'error');
+                return;
+            }
+
+            const filename = selectedPolicyIdx >= 0 ? loadedPolicies[selectedPolicyIdx].filename : 'custom_policy.rego';
+
+            setLoading('edit-policy-submit', true);
+            try {
+                const res = await fetch(`${API_URL}/propose_change`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        proposer_id: proposerId,
+                        changes: {
+                            policy_update: {
+                                filename: filename,
+                                content: content
+                            }
+                        }
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    showActionToast(`✅ Policy change for "${filename}" submitted.`);
+                    closeModal('edit-policies-modal');
+                } else {
+                    showActionToast(`Proposal failed: ${data.detail || JSON.stringify(data)}`, 'error');
+                }
+            } catch (err) {
+                showActionToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                setLoading('edit-policy-submit', false);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 7. New Workflow  →  POST /propose_change
+        // ═══════════════════════════════════════════════════════════════
+        document.getElementById('btn-new-workflow').addEventListener('click', () => {
+            openModal('new-workflow-modal');
+        });
+
+        async function submitNewWorkflow() {
+            const proposerId = document.getElementById('wf-proposer-id').value.trim();
+            const wfName = document.getElementById('wf-name').value.trim();
+            const wfTrigger = document.getElementById('wf-trigger').value;
+            const wfDesc = document.getElementById('wf-description').value.trim();
+
+            if (!proposerId || !wfName) {
+                showActionToast('Proposer ID and workflow name are required.', 'error');
+                return;
+            }
+
+            setLoading('wf-submit', true);
+            try {
+                const res = await fetch(`${API_URL}/propose_change`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        proposer_id: proposerId,
+                        changes: {
+                            new_workflow: {
+                                name: wfName,
+                                trigger: wfTrigger,
+                                description: wfDesc
+                            }
+                        }
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    showActionToast(`✅ Workflow "${wfName}" proposal submitted.`);
+                    closeModal('new-workflow-modal');
+                    document.getElementById('wf-proposer-id').value = '';
+                    document.getElementById('wf-name').value = '';
+                    document.getElementById('wf-description').value = '';
+                } else {
+                    showActionToast(`Proposal failed: ${data.detail || JSON.stringify(data)}`, 'error');
+                }
+            } catch (err) {
+                showActionToast(`Network error: ${err.message}`, 'error');
+            } finally {
+                setLoading('wf-submit', false);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 8. Export Report  →  Client-side CSV download (analytics data)
+        // ═══════════════════════════════════════════════════════════════
+        document.getElementById('btn-export-report').addEventListener('click', async () => {
+            try {
+                const res = await fetch(`${API_URL}/analytics`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const a = data.analytics;
+                    const headers = ['Metric', 'Value'];
+                    const rows = [
+                        ['Total Events', a.total_events],
+                        ['Interventions (Blocked)', a.interventions],
+                        ['Active Agents', a.active_agents]
+                    ];
+                    // Add event type breakdown
+                    if (a.event_type_breakdown) {
+                        Object.entries(a.event_type_breakdown).forEach(([k, v]) => {
+                            rows.push([`Event Type: ${k}`, v]);
+                        });
+                    }
+                    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+                    downloadCSV(csv, 'analytics_report.csv');
+                    showActionToast('✅ Analytics report exported.');
+                } else {
+                    showActionToast('Failed to fetch analytics.', 'error');
+                }
+            } catch (err) {
+                showActionToast(`Network error: ${err.message}`, 'error');
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // CSV Download Utility
+        // ═══════════════════════════════════════════════════════════════
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // Keyboard shortcut: 'N' opens the Create Policy modal
+        // ═══════════════════════════════════════════════════════════════
+        document.addEventListener('keydown', (e) => {
+            // Only fire if not typing in an input/textarea
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+            if (e.key === 'n' || e.key === 'N') {
+                openModal('create-policy-modal');
+            }
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.action-modal').forEach(m => m.style.display = 'none');
+            }
+        });
     </script>
 </body>
 

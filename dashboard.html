@@ -637,7 +637,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
                     <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12M17 20l-4-4M17 20l4-4" />
-                </svg> Transactions
+                </svg> Actions
             </div>
             <div class="nav-item">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -896,20 +896,21 @@
                 <div id="balances-summary-cards" class="split-cards"></div>
             </div>
 
-            <!-- TRANSACTIONS -->
-            <div id="page-transactions" class="page-section" style="display: none;">
+            <!-- ACTIONS -->
+            <div id="page-actions" class="page-section" style="display: none;">
                 <div class="page-header">
-                    <h1>Transactions</h1>
+                    <h1>Actions</h1>
                     <button id="btn-export-csv" class="btn-secondary">Export CSV</button>
                 </div>
                 <div class="hero-card" style="padding: 1.5rem;">
-                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Live Autonomy Transactions &
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Live Autonomy Actions &
                         Tool Calls</h3>
-                    <p>Unlike financial transactions, these represent deterministic actions attempted by autonomous
+                    <p>Unlike typical financial transactions, these represent deterministic actions attempted by
+                        autonomous
                         agents.</p>
                 </div>
                 <div class="table-container">
-                    <table id="transactions-table">
+                    <table id="actions-table">
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
@@ -919,11 +920,12 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody id="transactions-body">
+                        <tbody id="actions-body">
                             <tr>
                                 <td colspan="5"
-                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading
-                                    transactions...</td>
+                                    style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                    Loading live autonomy
+                                    actions...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1445,24 +1447,26 @@
             renderWorkflowsPage();
             fetchReportingPage();
 
-            // Transactions
-            const tBody = document.getElementById('transactions-body');
-            if (decisionLogs.length === 0) {
-                tBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No transactions found.</td></tr>`;
-            } else {
-                let tHtml = '';
-                decisionLogs.slice(0, 50).forEach(log => {
-                    const date = new Date(log.timestamp);
-                    const isDenied = !log.is_authorized;
-                    tHtml += `<tr>
-                        <td class="mono">${date.toLocaleString()}</td>
-                        <td><span class="agent-id">${log.agent_id}</span></td>
-                        <td>${log.action_type || 'unknown'}</td>
-                        <td class="mono">$${((log.risk_score || 0) * 0.05).toFixed(4)}</td>
-                        <td><span class="status-pill ${isDenied ? 'status-denied' : 'status-approved'}">${isDenied ? 'Blocked' : 'Processed'}</span></td>
-                    </tr>`;
-                });
-                tBody.innerHTML = tHtml;
+            // Actions
+            const tBody = document.getElementById('actions-body');
+            if (tBody) {
+                if (decisionLogs.length === 0) {
+                    tBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No actions found.</td></tr>`;
+                } else {
+                    let tHtml = '';
+                    decisionLogs.slice(0, 50).forEach(log => {
+                        const date = new Date(log.timestamp);
+                        const isDenied = !log.is_authorized;
+                        tHtml += `<tr>
+                            <td class="mono">${date.toLocaleString()}</td>
+                            <td><span class="agent-id">${log.agent_id}</span></td>
+                            <td>${log.action_type || 'unknown'}</td>
+                            <td class="mono">$${((log.risk_score || 0) * 0.05).toFixed(4)}</td>
+                            <td><span class="status-pill ${isDenied ? 'status-denied' : 'status-approved'}">${isDenied ? 'Blocked' : 'Processed'}</span></td>
+                        </tr>`;
+                    });
+                    tBody.innerHTML = tHtml;
+                }
             }
 
             // Agents — rendered separately via fetchAgentsPage()
@@ -1902,7 +1906,7 @@
         const pagesMap = {
             'Home': 'page-home',
             'Balances': 'page-balances',
-            'Transactions': 'page-transactions',
+            'Actions': 'page-actions',
             'Agents': 'page-agents',
             'Product catalog': 'page-product-catalog',
             'Security Ledger': 'page-security-ledger',
@@ -2154,12 +2158,11 @@
         });
 
         // ═══════════════════════════════════════════════════════════════
-        // 5. Export CSV (Transactions)  →  Client-side CSV download
-        // ═══════════════════════════════════════════════════════════════
+        // 5. Export CSV (Actions)  →  Client-side CSV download
         document.getElementById('btn-export-csv').addEventListener('click', () => {
             const decisionLogs = auditLogs.filter(l => l.type === 'final_decision');
             if (decisionLogs.length === 0) {
-                showActionToast('No transactions to export.', 'error');
+                showActionToast('No actions to export.', 'error');
                 return;
             }
             const headers = ['Timestamp', 'Agent ID', 'Operation', 'Cost Estimate', 'Status'];
@@ -2171,8 +2174,8 @@
                 l.is_authorized ? 'Processed' : 'Blocked'
             ]);
             const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
-            downloadCSV(csv, 'transactions.csv');
-            showActionToast(`✅ Exported ${decisionLogs.length} transactions.`);
+            downloadCSV(csv, 'actions.csv');
+            showActionToast(`✅ Exported ${decisionLogs.length} actions.`);
         });
 
         // ═══════════════════════════════════════════════════════════════

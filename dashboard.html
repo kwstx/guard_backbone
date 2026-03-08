@@ -434,6 +434,91 @@
             font-weight: 500;
             border-bottom: 1px solid #ffe7cc;
         }
+
+        /* SSE Connection Indicator */
+        .connection-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .connection-indicator .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .connection-indicator.live {
+            background: var(--success-bg);
+            color: var(--success-color);
+        }
+
+        .connection-indicator.live .dot {
+            background: var(--success-color);
+            animation: pulse-dot 2s infinite;
+        }
+
+        .connection-indicator.connecting {
+            background: #fff4e5;
+            color: #663c00;
+        }
+
+        .connection-indicator.connecting .dot {
+            background: #d97706;
+        }
+
+        .connection-indicator.offline {
+            background: var(--danger-bg);
+            color: var(--danger-color);
+        }
+
+        .connection-indicator.offline .dot {
+            background: var(--danger-color);
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Toast notification for real-time events */
+        .sse-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text-main);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(.4, 0, .2, 1);
+            z-index: 2000;
+            max-width: 380px;
+        }
+
+        .sse-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -565,6 +650,8 @@
                 <input type="text" placeholder="Search">
             </div>
             <div class="topbar-icons">
+                <span id="conn-indicator" class="connection-indicator connecting"><span
+                        class="dot"></span>Connecting</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="cursor: pointer;">
@@ -1049,8 +1136,10 @@
                 <input type="text" id="api-url-input" placeholder="http://localhost:8000">
             </div>
             <div class="form-group">
-                <label>Update Interval (ms)</label>
-                <input type="number" id="interval-input" placeholder="2000">
+                <label>Connection Mode</label>
+                <div
+                    style="font-size: 0.85rem; color: var(--text-secondary); padding: 0.6rem; background: var(--bg-card); border-radius: 6px;">
+                    Server-Sent Events (real-time push)</div>
             </div>
             <div class="form-actions">
                 <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
@@ -1059,89 +1148,150 @@
         </div>
     </div>
 
-    <script>
-        // State Persistence & Configuration
-        let API_URL = localStorage.getItem('BACKBONE_API_URL') || 'http://localhost:8000';
-        let REFRESH_INTERVAL = parseInt(localStorage.getItem('REFRESH_INTERVAL')) || 2000;
-        let pollTimer = null;
+    <!-- SSE Toast -->
+    <div id="sse-toast" class="sse-toast"></div>
 
-        // UI Initialization
+    <script>
+        // ───────────────────────────────────────────────────────────────
+        // State & Configuration
+        // ───────────────────────────────────────────────────────────────
+        let API_URL = localStorage.getItem('BACKBONE_API_URL') || 'http://localhost:8000';
+        let eventSource = null;
+        let auditLogs = [];   // in-memory mirror of the full ledger
+
+        // UI Init
         document.getElementById('api-url-input').value = API_URL;
-        document.getElementById('interval-input').value = REFRESH_INTERVAL;
 
         // Settings Logic
         const settingsTrigger = document.getElementById('settings-trigger');
         const settingsModal = document.getElementById('settings-modal');
-
         settingsTrigger.onclick = () => settingsModal.style.display = 'flex';
         function closeSettings() { settingsModal.style.display = 'none'; }
 
         function saveSettings() {
             API_URL = document.getElementById('api-url-input').value;
-            REFRESH_INTERVAL = parseInt(document.getElementById('interval-input').value);
             localStorage.setItem('BACKBONE_API_URL', API_URL);
-            localStorage.setItem('REFRESH_INTERVAL', REFRESH_INTERVAL);
             closeSettings();
-
-            // Restart polling with new settings
-            clearInterval(pollTimer);
+            // Reconnect SSE with new URL
+            connectSSE();
             fetchAudit();
-            pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
         }
 
-        // Notification Logic
-        if ("Notification" in window) {
-            Notification.requestPermission();
-        }
+        // Notification permission
+        if ('Notification' in window) Notification.requestPermission();
 
         function triggerSecurityAlert(log) {
-            if (Notification.permission === "granted") {
-                new Notification("Sovereign Denied Action", {
+            if (Notification.permission === 'granted') {
+                new Notification('Sovereign Denied Action', {
                     body: `Agent ${log.agent_id} attempted restricted action: ${log.action_type || 'unknown'}`,
-                    icon: "https://via.placeholder.com/64" // Replace with real icon path in GUI bundle
                 });
             }
         }
 
+        // ───────────────────────────────────────────────────────────────
+        // Connection Status Indicator
+        // ───────────────────────────────────────────────────────────────
+        function setConnectionStatus(state) {
+            const el = document.getElementById('conn-indicator');
+            if (!el) return;
+            el.className = 'connection-indicator ' + state;
+            const labels = { live: 'Live', connecting: 'Connecting', offline: 'Offline' };
+            el.innerHTML = `<span class="dot"></span>${labels[state] || state}`;
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // Toast helper for real-time event notifications
+        // ───────────────────────────────────────────────────────────────
+        let toastTimer = null;
+        function showToast(message) {
+            const t = document.getElementById('sse-toast');
+            t.textContent = message;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        // REST: Full initial fetch (runs once on load)
+        // ───────────────────────────────────────────────────────────────
         async function fetchAudit() {
             try {
                 const response = await fetch(`${API_URL}/audit`);
                 const data = await response.json();
-
                 if (data.status === 'success') {
                     document.getElementById('offline-banner').style.display = 'none';
-                    const logs = data.audit_logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                    // Check for new denials for notifications
-                    checkNewDenials(logs);
-
-                    // Persistent Cache
-                    localStorage.setItem('AUDIT_CACHE', JSON.stringify(logs));
-                    updateDashboard(logs);
+                    auditLogs = data.audit_logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    localStorage.setItem('AUDIT_CACHE', JSON.stringify(auditLogs));
+                    // Prime knownIds so we don't alert on historical events
+                    auditLogs.forEach(l => knownIds.add(`${l.timestamp}-${l.agent_id}`));
+                    updateDashboard(auditLogs);
                 }
-            } catch (error) {
-                console.error('Failed to fetch audit logs:', error);
-                document.getElementById('offline-banner').style.display = 'block';
+            } catch (err) {
+                console.warn('[REST] Initial fetch failed:', err.message);
                 const cached = localStorage.getItem('AUDIT_CACHE');
-                if (cached) updateDashboard(JSON.parse(cached));
+                if (cached) { auditLogs = JSON.parse(cached); updateDashboard(auditLogs); }
             }
         }
 
-        let knownIds = new Set();
-        function checkNewDenials(logs) {
-            logs.filter(l => l.type === 'final_decision' && !l.is_authorized).forEach(log => {
-                const uid = `${log.timestamp}-${log.agent_id}`;
-                if (!knownIds.has(uid) && knownIds.size > 0) { // Only alert on new items after first load
-                    triggerSecurityAlert(log);
-                }
-                knownIds.add(uid);
+        // ───────────────────────────────────────────────────────────────
+        // SSE: Persistent real-time connection (replaces setInterval)
+        // ───────────────────────────────────────────────────────────────
+        function connectSSE() {
+            // Tear down any existing connection
+            if (eventSource) { eventSource.close(); eventSource = null; }
+
+            setConnectionStatus('connecting');
+
+            eventSource = new EventSource(`${API_URL}/events`);
+
+            eventSource.addEventListener('connected', (e) => {
+                console.log('[SSE] Stream open', JSON.parse(e.data));
+                setConnectionStatus('live');
             });
-            // Prime the initial set
-            if (knownIds.size === 0) logs.forEach(l => knownIds.add(`${l.timestamp}-${l.agent_id}`));
+
+            eventSource.addEventListener('audit', (e) => {
+                const envelope = JSON.parse(e.data);
+                const evt = envelope.data;
+
+                // Deduplicate — skip if we already have this event_id
+                if (evt.event_id && auditLogs.some(l => l.event_id === evt.event_id)) return;
+
+                // Prepend (newest first)
+                auditLogs.unshift(evt);
+                localStorage.setItem('AUDIT_CACHE', JSON.stringify(auditLogs));
+
+                // Check for denial alerts
+                if (evt.type === 'final_decision' && !evt.is_authorized) {
+                    triggerSecurityAlert(evt);
+                    showToast(`🛑 Denied: ${evt.agent_id} → ${evt.action_type || 'unknown'}`);
+                } else if (evt.type === 'final_decision') {
+                    showToast(`✅ Approved: ${evt.agent_id} → ${evt.action_type || 'unknown'}`);
+                }
+
+                updateDashboard(auditLogs);
+            });
+
+            eventSource.onerror = () => {
+                setConnectionStatus('offline');
+                document.getElementById('offline-banner').style.display = 'block';
+                // EventSource auto-reconnects; we update the indicator when it does
+            };
+
+            eventSource.onopen = () => {
+                setConnectionStatus('live');
+                document.getElementById('offline-banner').style.display = 'none';
+            };
         }
 
+        // ───────────────────────────────────────────────────────────────
+        // Denials tracking
+        // ───────────────────────────────────────────────────────────────
+        let knownIds = new Set();
+
+        // ───────────────────────────────────────────────────────────────
+        // Dashboard Renderer (unchanged logic, same as before)
+        // ───────────────────────────────────────────────────────────────
         function updateDashboard(logs) {
-            // Update Dashboard Analytics Panel (Home Page)
             document.getElementById('home-total-events').innerText = logs.length;
             const decisionLogs = logs.filter(log => log.type === 'final_decision');
             const deniedCount = decisionLogs.filter(log => !log.is_authorized).length;
@@ -1150,7 +1300,7 @@
             const uniqueAgents = new Set(logs.map(l => l.agent_id).filter(id => id));
             document.getElementById('home-active-agents').innerText = uniqueAgents.size;
 
-            // Transactions binding
+            // Transactions
             const tBody = document.getElementById('transactions-body');
             if (decisionLogs.length === 0) {
                 tBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No transactions found.</td></tr>`;
@@ -1170,7 +1320,7 @@
                 tBody.innerHTML = tHtml;
             }
 
-            // Agents Table Default Load
+            // Agents
             const aBody = document.getElementById('agents-body');
             if (uniqueAgents.size === 0) {
                 aBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No agents found on ledger.</td></tr>`;
@@ -1181,7 +1331,6 @@
                     const lastPing = agentLogs.length > 0 ? new Date(agentLogs[0].timestamp).toLocaleString() : 'N/A';
                     const totalActions = agentLogs.length;
                     const avgRisk = agentLogs.length > 0 ? (agentLogs.reduce((acc, l) => acc + (l.risk_score || 0), 0) / agentLogs.length).toFixed(2) : 0.00;
-
                     aHtml += `<tr>
                         <td><span class="agent-id">${agentId}</span></td>
                         <td class="mono" style="opacity: 0.7;">${lastPing}</td>
@@ -1193,20 +1342,18 @@
                 aBody.innerHTML = aHtml;
             }
 
-            // Standard Security Ledger Default Update
+            // Security Ledger
             const auditBody = document.getElementById('audit-body');
             if (decisionLogs.length === 0) {
                 auditBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No events found on the ledger.</td></tr>`;
                 return;
             }
-
             let html = '';
             decisionLogs.forEach(log => {
                 const isDenied = !log.is_authorized;
                 const date = new Date(log.timestamp);
                 const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-
                 html += `
                     <tr>
                         <td style="white-space: nowrap;">
@@ -1229,18 +1376,17 @@
                     </tr>
                 `;
             });
-
             auditBody.innerHTML = html;
         }
 
-        // Initialize polling
-        fetchAudit();
-        pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
+        // ───────────────────────────────────────────────────────────────
+        // Boot: fetch once via REST, then open SSE stream
+        // ───────────────────────────────────────────────────────────────
+        fetchAudit().then(() => connectSSE());
 
         // Sidebar Navigation Logic
         const navItems = document.querySelectorAll('.nav-item');
 
-        // Map names to their valid container ids
         const pagesMap = {
             'Home': 'page-home',
             'Balances': 'page-balances',
@@ -1256,31 +1402,21 @@
             'Reporting': 'page-reporting'
         };
 
-        // Get all pages references dynamically
         const allPages = Object.values(pagesMap).map(id => document.getElementById(id)).filter(p => p);
 
         navItems.forEach(item => {
             item.addEventListener('click', () => {
-                // Ensure text formatting removes spaces and SVG remnants. 
-                // .textContent grabs the text along with raw spaces from nested tags
-                // We'll extract carefully
                 const pageName = item.textContent.trim().replace(/\n/g, '').replace(/  +/g, ' ');
-
                 if (pagesMap[pageName]) {
-                    // Update Active styling
                     navItems.forEach(nav => nav.classList.remove('active'));
                     item.classList.add('active');
-
-                    // Hide everything
                     allPages.forEach(p => p.style.display = 'none');
-                    // Show valid
                     const activePage = document.getElementById(pagesMap[pageName]);
                     if (activePage) activePage.style.display = 'block';
                 }
             });
         });
 
-        // Show Home by default assuming it's the first menu option, unless security ledger was pre-selected
         if (document.getElementById('page-home')) {
             allPages.forEach(p => p.style.display = 'none');
             document.getElementById('page-security-ledger').style.display = 'block';

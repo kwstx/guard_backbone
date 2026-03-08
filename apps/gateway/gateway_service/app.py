@@ -1,11 +1,13 @@
 from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
+import asyncio
 import json
 import uuid
 import os
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 
 from guard.core import AutonomyCore, AutonomyContainer
 from guard.core.schemas.models import (
@@ -20,11 +22,71 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[3]  # apps/gateway/gateway_serv
 POLICIES_DIR = _PROJECT_ROOT / "policies"
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# Real-Time Event Bus — Server-Sent Events (SSE) infrastructure
+# ═══════════════════════════════════════════════════════════════════════
+
+class EventBus:
+    """Pub/sub hub that fans-out audit events to every connected SSE client.
+
+    Each dashboard that opens the /events endpoint gets its own asyncio.Queue.
+    When the state store writes a new audit event the gateway calls
+    `publish()`, which pushes the serialized event into every subscriber
+    queue.  The SSE generator drains its queue and yields data frames.
+    """
+
+    def __init__(self) -> None:
+        self._subscribers: Set[asyncio.Queue] = set()
+
+    def subscribe(self) -> asyncio.Queue:
+        q: asyncio.Queue = asyncio.Queue()
+        self._subscribers.add(q)
+        return q
+
+    def unsubscribe(self, q: asyncio.Queue) -> None:
+        self._subscribers.discard(q)
+
+    async def publish(self, event_type: str, data: Dict[str, Any]) -> None:
+        payload = json.dumps({"type": event_type, "data": data})
+        dead: List[asyncio.Queue] = []
+        for q in self._subscribers:
+            try:
+                q.put_nowait(payload)
+            except asyncio.QueueFull:
+                dead.append(q)
+        for q in dead:
+            self._subscribers.discard(q)
+
+
+# Module-level event bus shared between the SSE endpoint and the
+# state-store wrapper so every audit write is broadcast immediately.
+_event_bus = EventBus()
+
+
+def _wrap_state_store(store, bus: EventBus):
+    """Monkey-patch `save_audit_event` so every write also publishes to the bus."""
+    _original_save = store.save_audit_event
+
+    async def _save_and_broadcast(event_id: str, event_data: Dict[str, Any]) -> None:
+        await _original_save(event_id, event_data)
+        # Re-read the event so we get the hash / timestamp that FileStateStore adds
+        try:
+            events = await store.get_audit_events()
+            # Find the event we just saved by matching event_id
+            saved = next((e for e in events if e.get("event_id") == event_id), event_data)
+        except Exception:
+            saved = event_data
+        await bus.publish("audit_event", saved)
+
+    store.save_audit_event = _save_and_broadcast
+    return store
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Sovereign Core Gateway",
         description="Sovereign Core: The Runtime Firewall for AI Agents.",
-        version="0.2.0"
+        version="0.3.0"
     )
 
     # ── CORS Middleware ─────────────────────────────────────────────────
@@ -43,6 +105,11 @@ def create_app() -> FastAPI:
     # Note: 'simulation' in the core maps to the user's 'logic' or 'impact' layer.
     container = AutonomyContainer()
     core = container.build_core()
+
+    # ── Wire the event bus into the state store ─────────────────────────
+    # After the core is built the state_store exists; we wrap its
+    # save_audit_event method so every write is also pushed to the SSE bus.
+    _wrap_state_store(core.state_store, _event_bus)
 
     # ===================================================================
     # Core Endpoints (existing)
@@ -285,6 +352,53 @@ def create_app() -> FastAPI:
             "service": "Sovereign Core",
             "tagline": "The Runtime Firewall for AI Agents"
         }
+
+    # ===================================================================
+    # Server-Sent Events (SSE) — Real-Time Push
+    # ===================================================================
+
+    @app.get("/events")
+    async def sse_stream(request: Request):
+        """SSE endpoint that pushes every new audit event to the dashboard.
+
+        The browser opens a persistent HTTP connection via `new EventSource('/events')`.
+        Whenever an agent action is authorized, denied, or any state-store
+        write occurs, the event is pushed here in real-time (< 50 ms latency
+        vs the ~2 000 ms polling interval it replaces).
+
+        The connection is kept alive with periodic heartbeats so that proxies
+        do not close the idle stream.
+        """
+        queue = _event_bus.subscribe()
+
+        async def _generate():
+            try:
+                # Send an initial connection-confirmed event
+                yield f"event: connected\ndata: {{\"status\": \"stream_open\", \"timestamp\": \"{datetime.now(timezone.utc).isoformat()}\"}}\n\n"
+
+                while True:
+                    # Check if the client has disconnected
+                    if await request.is_disconnected():
+                        break
+
+                    try:
+                        payload = await asyncio.wait_for(queue.get(), timeout=15.0)
+                        yield f"event: audit\ndata: {payload}\n\n"
+                    except asyncio.TimeoutError:
+                        # Send keepalive comment so proxies don't close the connection
+                        yield ": heartbeat\n\n"
+            finally:
+                _event_bus.unsubscribe(queue)
+
+        return StreamingResponse(
+            _generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # Disable nginx buffering
+            },
+        )
 
     return app
 

@@ -35,6 +35,6 @@ class ScoringModule(ScoringEngine):
         if action_score < 0.0:
             exporter.increment_blocked_action()
             
-        return ScoringResult(action_score=action_score, threshold_met=action_score >= 0.0)
+        return ScoringResult(action_score=action_score, threshold_met=action_score <= 85.0)
 
 __version__ = "0.1.0"

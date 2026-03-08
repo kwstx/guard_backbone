@@ -26,6 +26,7 @@ members = [
     "packages/enforcement",
     "packages/logic",
     "packages/scoring",
+    "packages/shared_utils",
 ]
 
 [tool.hatch.envs.default]

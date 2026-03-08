@@ -1,5 +1,0 @@
-﻿[project]
-name = "shared_utils"
-version = "0.1.0"
-description = "Shared base utilities"
-dependencies = []

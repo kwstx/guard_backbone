@@ -39,8 +39,9 @@ def circuit_breaker(client, agent_id: str, action_type: str, threshold: float = 
                 risk_score = getattr(response, "risk_score", 0.0)
             
             if float(risk_score) > threshold:
+                reason = response.get("reason", "Unknown risk factor") if isinstance(response, dict) else getattr(response, "reason", "Unknown risk factor")
                 raise SecurityViolation(
-                    f"Security Violation: Action '{action_type}' blocked. Risk score {risk_score} exceeds threshold {threshold}"
+                    f"Action Denied by Backbone: {reason} (Risk score {risk_score} exceeds threshold {threshold})"
                 )
                 
             return await func(*args, **kwargs)
@@ -64,8 +65,9 @@ def circuit_breaker(client, agent_id: str, action_type: str, threshold: float = 
                 risk_score = getattr(response, "risk_score", 0.0)
             
             if float(risk_score) > threshold:
+                reason = response.get("reason", "Unknown risk factor") if isinstance(response, dict) else getattr(response, "reason", "Unknown risk factor")
                 raise SecurityViolation(
-                    f"Security Violation: Action '{action_type}' blocked. Risk score {risk_score} exceeds threshold {threshold}"
+                    f"Action Denied by Backbone: {reason} (Risk score {risk_score} exceeds threshold {threshold})"
                 )
                 
             return func(*args, **kwargs)

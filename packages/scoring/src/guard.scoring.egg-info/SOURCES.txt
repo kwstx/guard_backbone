@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+src/guard.scoring.egg-info/PKG-INFO
+src/guard.scoring.egg-info/SOURCES.txt
+src/guard.scoring.egg-info/dependency_links.txt
+src/guard.scoring.egg-info/requires.txt
+src/guard.scoring.egg-info/top_level.txt

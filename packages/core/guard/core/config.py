@@ -48,7 +48,7 @@ class AutonomyConfig:
             "governance": True,
         }
     )
-    state_backend: StateBackendName = "memory"
+    state_backend: StateBackendName = "file"
     implementations: Dict[str, str] = field(
         default_factory=lambda: {
             "identity": "default",

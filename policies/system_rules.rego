@@ -7,7 +7,7 @@ max_allowed := 1000
 default allow := false
 
 # Rule that allows actions only if conditions are met
-allow {
+allow if {
     input.agent_level > 0
     input.requested_budget < max_allowed
 }

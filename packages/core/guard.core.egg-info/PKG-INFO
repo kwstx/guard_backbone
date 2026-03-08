@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: guard.core
+Version: 0.1.0
+Summary: Autonomy Core Engine
+Requires-Dist: pydantic
+Requires-Dist: python-terraform
+Requires-Dist: stripe
+Requires-Dist: cryptography

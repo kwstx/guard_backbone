@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guard Backbone | Security Ledger</title>
+    <style>
+        :root {
+            --primary-purple: #635bff;
+            --primary-purple-hover: #0a2540;
+            --text-main: #1a1f36;
+            --text-secondary: #4f566b;
+            --bg-main: #ffffff;
+            --bg-sidebar: #f7f9fc;
+            --bg-card: #f6f9fc;
+            --border-color: #e3e8ee;
+            --danger-color: #d92d20;
+            --danger-bg: #fee4e2;
+            --success-color: #039855;
+            --success-bg: #d1fadf;
+
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-family);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 240px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 0;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        .brand-icon {
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary-purple);
+            border-radius: 4px;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-title {
+            padding: 0 1.5rem 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 0.4rem 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            color: var(--primary-purple);
+            font-weight: 500;
+            background-color: rgba(99, 91, 255, 0.05);
+        }
+
+        .nav-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.6;
+        }
+
+        .nav-item.active .nav-icon {
+            color: var(--primary-purple);
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--bg-main);
+        }
+
+        .topbar {
+            height: 60px;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid transparent;
+            /* Keeps spacing */
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-card);
+            border-radius: 6px;
+            padding: 6px 12px;
+            width: 400px;
+            gap: 8px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-size: 0.875rem;
+            color: var(--text-main);
+        }
+
+        .topbar-icons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: var(--text-secondary);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1rem 2rem 2rem 2rem;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-purple);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-purple-hover);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            color: var(--primary-purple);
+            border-bottom-color: var(--primary-purple);
+        }
+
+        /* Cards Layout */
+        .hero-card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .hero-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+
+        .split-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 2rem;
+        }
+
+        .info-card h3 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .info-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .link-text {
+            color: var(--primary-purple);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .link-text:hover {
+            color: var(--primary-purple-hover);
+        }
+
+        /* Table Styles */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-denied {
+            background-color: var(--danger-bg);
+            color: var(--danger-color);
+        }
+
+        .status-approved {
+            background-color: var(--success-bg);
+            color: var(--success-color);
+        }
+
+        .mono {
+            font-family: "JetBrains Mono", Consolas, monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+
+        .agent-id {
+            font-weight: 500;
+        }
+
+        .reason-text {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        /* Settings Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Status Banner for Offline Mode */
+        .status-banner {
+            display: none;
+            background: #fff4e5;
+            color: #663c00;
+            padding: 0.5rem 2rem;
+            font-size: 0.75rem;
+            text-align: center;
+            font-weight: 500;
+            border-bottom: 1px solid #ffe7cc;
+        }
+
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">G</div>
+            Guard Backbone
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg> Home
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg> Balances
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12M17 20l-4-4M17 20l4-4" />
+                </svg> Transactions
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg> Agents
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path
+                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg> Product catalog
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">Shortcuts</div>
+            <div class="nav-item active">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg> Security Ledger
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                </svg> Policy overview
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                    <line x1="9" y1="3" x2="9" y2="18" />
+                    <line x1="15" y1="6" x2="15" y2="21" />
+                </svg> Atlas
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg> Workflows
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">Products</div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                </svg> Payments
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                </svg> Billing
+            </div>
+            <div class="nav-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                </svg> Reporting
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <div class="topbar">
+            <div class="search-bar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="opacity: 0.5; margin-right: 4px;">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" placeholder="Search">
+            </div>
+            <div class="topbar-icons">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="cursor: pointer;">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="cursor: pointer;">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <svg id="settings-trigger" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="cursor: pointer;">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span
+                    style="background: var(--primary-purple); color: white; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer;">U</span>
+            </div>
+        </div>
+
+        <div id="offline-banner" class="status-banner">
+            Unable to connect to Guard Backbone. Displaying last cached security records.
+        </div>
+        <div class="main-content">
+            <div class="page-header">
+                <h1>Security Audit Ledger</h1>
+                <button class="btn-primary">
+                    <span style="font-size: 1.2rem; line-height: 1;">+</span> Create custom policy rule <span
+                        style="background: rgba(255,255,255,0.2); border-radius: 4px; padding: 0 4px; margin-left: 4px; font-size: 10px;">N</span>
+                </button>
+            </div>
+
+            <div class="tabs">
+                <div class="tab">Overview</div>
+                <div class="tab">Active Agents</div>
+                <div class="tab">Risk Thresholds</div>
+                <div class="tab">Impact Simulator</div>
+                <div class="tab active">Audit Ledger <span
+                        style="background: #e3e8ee; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px;">Preview</span>
+                </div>
+            </div>
+
+            <!-- Intro Card -->
+            <div class="hero-card">
+                <h2>Verifiable tamper-evident ledger</h2>
+                <p>Track agent actions, review risk scores, and verify the immutable SHA-256 hash chains of all autonomy
+                    policy decisions. Capture simulation results and enforce safety constraints using real-time physical
+                    blast radius analysis.</p>
+                <button class="btn-primary">Export audit records</button>
+            </div>
+
+            <!-- Split Info Cards -->
+            <div class="split-cards">
+                <div class="info-card">
+                    <h3>Automatically evaluate infrastructure impact</h3>
+                    <p>Guard Backbone's new simulator simplifies how you evaluate high-risk actions. Send the agent's
+                        Terraform execution plan to the simulation layer. We'll return the predicted resources deleted,
+                        modified, or created to calculate a deterministic risk score.</p>
+                    <a href="#" class="link-text">View docs</a>
+                </div>
+                <div class="info-card">
+                    <h3>Compare risk scoring across environments</h3>
+                    <p>Impact thresholds change frequently. Make informed decisions with up-to-date blast radius metrics
+                        evaluated in an isolated sandbox environment before applying changes to production.</p>
+                    <a href="#" class="link-text">View simulations</a>
+                </div>
+            </div>
+
+            <!-- Table Section for live logs -->
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Recent Activity Log</h3>
+            <div class="table-container">
+                <table id="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Agent ID</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Risk Score</th>
+                            <th>SHA-256 Chain</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                Loading audit records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                App Settings
+            </div>
+            <div class="form-group">
+                <label>Backbone API URL</label>
+                <input type="text" id="api-url-input" placeholder="http://localhost:8000">
+            </div>
+            <div class="form-group">
+                <label>Update Interval (ms)</label>
+                <input type="number" id="interval-input" placeholder="2000">
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
+                <button class="btn-primary" onclick="saveSettings()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Persistence & Configuration
+        let API_URL = localStorage.getItem('BACKBONE_API_URL') || 'http://localhost:8000';
+        let REFRESH_INTERVAL = parseInt(localStorage.getItem('REFRESH_INTERVAL')) || 2000;
+        let pollTimer = null;
+
+        // UI Initialization
+        document.getElementById('api-url-input').value = API_URL;
+        document.getElementById('interval-input').value = REFRESH_INTERVAL;
+
+        // Settings Logic
+        const settingsTrigger = document.getElementById('settings-trigger');
+        const settingsModal = document.getElementById('settings-modal');
+
+        settingsTrigger.onclick = () => settingsModal.style.display = 'flex';
+        function closeSettings() { settingsModal.style.display = 'none'; }
+        
+        function saveSettings() {
+            API_URL = document.getElementById('api-url-input').value;
+            REFRESH_INTERVAL = parseInt(document.getElementById('interval-input').value);
+            localStorage.setItem('BACKBONE_API_URL', API_URL);
+            localStorage.setItem('REFRESH_INTERVAL', REFRESH_INTERVAL);
+            closeSettings();
+            
+            // Restart polling with new settings
+            clearInterval(pollTimer);
+            fetchAudit();
+            pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
+        }
+
+        // Notification Logic
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+
+        function triggerSecurityAlert(log) {
+            if (Notification.permission === "granted") {
+                new Notification("Sovereign Denied Action", {
+                    body: `Agent ${log.agent_id} attempted restricted action: ${log.action_type || 'unknown'}`,
+                    icon: "https://via.placeholder.com/64" // Replace with real icon path in GUI bundle
+                });
+            }
+        }
+
+        async function fetchAudit() {
+            try {
+                const response = await fetch(`${API_URL}/audit`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('offline-banner').style.display = 'none';
+                    const logs = data.audit_logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    // Check for new denials for notifications
+                    checkNewDenials(logs);
+                    
+                    // Persistent Cache
+                    localStorage.setItem('AUDIT_CACHE', JSON.stringify(logs));
+                    updateDashboard(logs);
+                }
+            } catch (error) {
+                console.error('Failed to fetch audit logs:', error);
+                document.getElementById('offline-banner').style.display = 'block';
+                const cached = localStorage.getItem('AUDIT_CACHE');
+                if (cached) updateDashboard(JSON.parse(cached));
+            }
+        }
+
+        let knownIds = new Set();
+        function checkNewDenials(logs) {
+            logs.filter(l => l.type === 'final_decision' && !l.is_authorized).forEach(log => {
+                const uid = `${log.timestamp}-${log.agent_id}`;
+                if (!knownIds.has(uid) && knownIds.size > 0) { // Only alert on new items after first load
+                    triggerSecurityAlert(log);
+                }
+                knownIds.add(uid);
+            });
+            // Prime the initial set
+            if (knownIds.size === 0) logs.forEach(l => knownIds.add(`${l.timestamp}-${l.agent_id}`));
+        }
+
+        function updateDashboard(logs) {
+            const body = document.getElementById('audit-body');
+            const decisionLogs = logs.filter(log => log.type === 'final_decision');
+
+            if (decisionLogs.length === 0) {
+                body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No events found on the ledger.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            decisionLogs.forEach(log => {
+                const isDenied = !log.is_authorized;
+                const date = new Date(log.timestamp);
+                const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+                html += `
+                    <tr>
+                        <td style="white-space: nowrap;">
+                            <div>${timeString}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dateString}</div>
+                        </td>
+                        <td><span class="agent-id">${log.agent_id}</span></td>
+                        <td>
+                            <div>${log.action_type || 'unknown_action'}</div>
+                            ${log.reason ? '<div class="reason-text">' + log.reason + '</div>' : ''}
+                        </td>
+                        <td>
+                            <span class="status-pill ${isDenied ? 'status-denied' : 'status-approved'}">${isDenied ? 'Denied' : 'Approved'}</span>
+                        </td>
+                        <td>${log.risk_score}</td>
+                        <td style="max-width: 200px;">
+                            <div class="mono" title="${log.hash}">${log.hash ? log.hash.substring(0, 16) + '...' : '-'}</div>
+                            <div class="mono" style="opacity: 0.6; margin-top: 4px;" title="${log.previous_hash}">Prev: ${log.previous_hash ? log.previous_hash.substring(0, 8) + '...' : '-'}</div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            body.innerHTML = html;
+        }
+
+        // Initialize polling
+        fetchAudit();
+        pollTimer = setInterval(fetchAudit, REFRESH_INTERVAL);
+    </script>
+</body>
+
+</html>

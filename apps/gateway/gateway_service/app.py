@@ -101,6 +101,16 @@ def create_app() -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+    @app.get("/audit")
+    async def get_audit_logs():
+        """Retrieve the tamper-evident audit ledger."""
+        try:
+            # Re-access the state store from the core or container
+            events = await core.state_store.get_audit_events()
+            return {"status": "success", "audit_logs": events}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     @app.get("/health")
     async def health():
         return {

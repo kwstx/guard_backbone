@@ -1,0 +1,12 @@
+{
+  "type": "final_decision",
+  "agent_id": "sre-bot-alpha",
+  "action_type": "database_remediation",
+  "is_authorized": false,
+  "reason": "Policy Violation: Denied by OPA Policy: Database deletions are strictly prohibited for agent 'sre-bot-alpha'.",
+  "risk_score": 100.0,
+  "event_id": "decision_8b7d3b4f-187f-477d-b603-5f0c670fd865",
+  "timestamp": "2026-03-08T13:14:02.254578+00:00",
+  "previous_hash": "cbb3de6aff3670db401848ce20fa1b2c85784ba293e59a68c3bbc543c0f00794",
+  "hash": "6ffc178cedae285556027c45b65a285038340e398da1a1f99e5ac0be5ddf1030"
+}

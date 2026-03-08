@@ -1,5 +1,7 @@
 import json
+import hashlib
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from .interfaces import StateStore
 
@@ -42,6 +44,16 @@ class FileStateStore(StateStore):
 
         for subdir in ["agents", "proposals", "decisions", "audit_events"]:
             (self.base_path / subdir).mkdir(parents=True, exist_ok=True)
+            
+        self._last_hash_file = self.base_path / "last_audit_hash.txt"
+
+    def _get_last_hash(self) -> str:
+        if self._last_hash_file.exists():
+            return self._last_hash_file.read_text().strip()
+        return "0" * 64
+
+    def _set_last_hash(self, h: str) -> None:
+        self._last_hash_file.write_text(h)
 
     def _get_path(self, collection: str, item_id: str) -> Path:
         return self.base_path / collection / f"{item_id}.json"
@@ -75,7 +87,21 @@ class FileStateStore(StateStore):
         return self._read_json(self._get_path("decisions", decision_id))
 
     async def save_audit_event(self, event_id: str, event_data: Dict[str, Any]) -> None:
+        # Create a tamper-evident record with a SHA-256 chain
+        prev_hash = self._get_last_hash()
+        
+        # Add metadata
+        event_data["event_id"] = event_id
+        event_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+        event_data["previous_hash"] = prev_hash
+        
+        # Calculate current hash
+        record_str = json.dumps(event_data, sort_keys=True)
+        current_hash = hashlib.sha256(record_str.encode()).hexdigest()
+        event_data["hash"] = current_hash
+        
         self._write_json(self._get_path("audit_events", event_id), event_data)
+        self._set_last_hash(current_hash)
 
     async def get_audit_events(self) -> List[Dict[str, Any]]:
         events = []

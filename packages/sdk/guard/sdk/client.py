@@ -70,35 +70,7 @@ class AutonomyClient:
         payload: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
-        Check if an agent is authorized to perform a specific action.
-        This triggers a full safety check encompassing identity, enforcement, economics, scoring, and simulation.
-        
-        Args:
-            agent_id: The ID of the agent attempting the action.
-            action_id: A unique identifier for the action.
-            action_type: The type or category of the action.
-            payload: Optional dictionary containing the action details.
-
-        Returns:
-            True if the action is authorized, False otherwise.
-            
-        Raises:
-            ActionAuthorizationError: If an error occurs during the authorization process.
-            ClientConnectionError: If the remote server cannot be reached.
-            
-        Example:
-            ```python
-            is_authorized = await client.authorize(
-                agent_id="AgentZero",
-                action_id="tx_10294",
-                action_type="transfer_funds",
-                payload={"amount": 500, "currency": "USD"}
-            )
-            if is_authorized:
-                print("Proceeding with the action...")
-            else:
-                print("Agent unauthorized for this action")
-            ```
+        Check if an agent is authorized to perform a specific action via REST API.
         """
         payload = payload or {}
         req_obj = ActionAuthorizationRequest(
@@ -109,43 +81,26 @@ class AutonomyClient:
         )
         body_bytes = req_obj.model_dump_json().encode('utf-8')
 
-        from event_bus import EventBus, EventTopic, EventMessage
-        
-        bus = EventBus()
-        await bus.connect()
-        
-        correlation_id = str(uuid.uuid4())
-        
-        # We need a way to wait for the response event
-        future = asyncio.get_running_loop().create_future()
-        
-        async def on_response(msg: EventMessage):
-            if msg.correlationId == correlation_id:
-                future.set_result(msg.payload.get("status") == "APPROVED")
-
-        await bus.subscribe(EventTopic.SAFETY_LOOP_RESULT, on_response)
-        
-        # Publish the request
-        await bus.publish(
-            EventTopic.ACTION_REQUESTED,
-            payload={
-                "agent_id": agent_id,
-                "action_id": action_id,
-                "action_type": action_type,
-                "payload": payload
-            },
-            correlation_id=correlation_id,
-            sender="guard.sdk"
-        )
-        
-        try:
-            # Wait for response with timeout
-            result = await asyncio.wait_for(future, timeout=10.0)
-            return result
-        except asyncio.TimeoutError:
-            raise ActionAuthorizationError("Timeout waiting for safety loop response via event bus")
-        finally:
-            await bus.disconnect()
+        if self.server_url:
+            req = urllib.request.Request(
+                f"{self.server_url}/authorize_action",
+                data=body_bytes,
+                headers=self._request_headers,
+                method="POST"
+            )
+            try:
+                # Use a separate thread for the synchronous urlopen if needed, 
+                # but for simplicity we'll assume this runs in an environment where blocking is okay or use asyncio.to_thread
+                with urllib.request.urlopen(req) as response:
+                    data = json.loads(response.read().decode('utf-8'))
+                    return data.get("is_authorized", False)
+            except Exception as e:
+                raise ActionAuthorizationError(f"Error calling remote server: {e}") from e
+        else:
+            if not self._core:
+                raise AutonomySDKError("Core Engine is not initialized locally.")
+            result = await self._core.authorize_action(req_obj)
+            return result.is_authorized
 
     def authorize_sync(
         self,
@@ -172,8 +127,7 @@ class AutonomyClient:
         payload: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Check if an agent is authorized to perform a specific action and return full details.
-        This provides access to 'risk_score' and other payload metadata from the safety loop.
+        Check if an agent is authorized via REST API and return full details.
         """
         payload = payload or {}
         req_obj = ActionAuthorizationRequest(
@@ -182,47 +136,29 @@ class AutonomyClient:
             action_type=action_type,
             payload=payload
         )
+        body_bytes = req_obj.model_dump_json().encode('utf-8')
 
-        from event_bus import EventBus, EventTopic, EventMessage
-        
-        bus = EventBus()
-        await bus.connect()
-        
-        correlation_id = str(uuid.uuid4())
-        
-        future = asyncio.get_running_loop().create_future()
-        
-        async def on_response(msg: EventMessage):
-            if msg.correlationId == correlation_id:
-                future.set_result(msg.payload)
-
-        await bus.subscribe(EventTopic.SAFETY_LOOP_RESULT, on_response)
-        
-        # Publish the request
-        await bus.publish(
-            EventTopic.ACTION_REQUESTED,
-            payload={
-                "agent_id": agent_id,
-                "action_id": action_id,
-                "action_type": action_type,
-                "payload": payload
-            },
-            correlation_id=correlation_id,
-            sender="guard.sdk"
-        )
-        
-        try:
-            # Wait for response with timeout
-            result = await asyncio.wait_for(future, timeout=10.0)
-            if isinstance(result, dict):
-                # Ensure risk_score defaults to 0.0 and decision is present
-                result.setdefault("risk_score", 0.0)
-                result.setdefault("decision", result.get("status", "BLOCKED"))
-            return result
-        except asyncio.TimeoutError:
-            raise ActionAuthorizationError("Timeout waiting for safety loop response via event bus")
-        finally:
-            await bus.disconnect()
+        if self.server_url:
+            req = urllib.request.Request(
+                f"{self.server_url}/authorize_action",
+                data=body_bytes,
+                headers=self._request_headers,
+                method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req) as response:
+                    data = json.loads(response.read().decode('utf-8'))
+                    # Normalize response to include decision and risk_score
+                    data.setdefault("risk_score", 0.0)
+                    data.setdefault("decision", "APPROVED" if data.get("is_authorized") else "DENIED")
+                    return data
+            except Exception as e:
+                raise ActionAuthorizationError(f"Error calling remote server: {e}") from e
+        else:
+            if not self._core:
+                raise AutonomySDKError("Core Engine is not initialized locally.")
+            result = await self._core.authorize_action(req_obj)
+            return result.model_dump()
 
     def authorize_action_sync(
         self,

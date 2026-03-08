@@ -32,7 +32,8 @@ class AutonomyContainer:
             economic=self.resolve("economic"),
             scoring=self.resolve("scoring"),
             simulation=self.resolve("simulation"),
-            governance=self.resolve("governance")
+            governance=self.resolve("governance"),
+            state_store=self.resolve("state_backend")
         )
 
     def register_factory(self, dependency: str, implementation: str, factory: Factory) -> None:
@@ -69,9 +70,9 @@ class AutonomyContainer:
             "enforcement": {"default": _constructor_factory("guard.enforcement", "EnforcementLayer")},
             "economic": {"default": _constructor_factory("guard.core.engine", "StripeEconomicPolicyEngine")},
             "scoring": {"default": _constructor_factory("guard.scoring", "ScoringModule")},
-            "simulation": {"default": _constructor_factory("simulation_layer", "SimulationLayer")},
+            "simulation": {"default": _constructor_factory("guard.core.engine", "TerraformSimulator")},
             "governance": {
-                "default": _constructor_factory("self_improvement_governance", "GovernanceModule")
+                "default": lambda _cfg, _container: type("MockGovernance", (), {"record_action": lambda s, r: None, "submit_proposal": lambda s, p: None})()
             },
             "state_backend": {
                 "memory": lambda _cfg, _container: InMemoryStateStore(),

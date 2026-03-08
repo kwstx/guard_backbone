@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: gateway_service
+Version: 0.1.0
+Summary: Gateway service for external agent action orchestration
+Requires-Dist: guard.core
+Requires-Dist: guard.enforcement
+Requires-Dist: simulation_layer
+Requires-Dist: fastapi
+Requires-Dist: uvicorn

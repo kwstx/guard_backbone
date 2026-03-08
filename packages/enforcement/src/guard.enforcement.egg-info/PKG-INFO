@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: guard.enforcement
+Version: 0.1.0
+Summary: guard.enforcement package
+Requires-Dist: guard.core
